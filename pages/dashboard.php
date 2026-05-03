@@ -24,7 +24,6 @@ $totalSites = $sites ? $sites->num_rows : 0;
             color: #1a1a2e;
         }
 
-        /* ── TOPBAR ── */
         .topbar {
             height: 65px;
             background: #fff;
@@ -87,12 +86,8 @@ $totalSites = $sites ? $sites->num_rows : 0;
             transition: all 0.2s;
         }
 
-        .logout-btn:hover {
-            background: #fecaca;
-            transform: translateY(-1px);
-        }
+        .logout-btn:hover { background: #fecaca; transform: translateY(-1px); }
 
-        /* ── MAIN ── */
         .main { padding: 36px 32px; max-width: 1200px; margin: 0 auto; }
 
         .page-header {
@@ -128,7 +123,6 @@ $totalSites = $sites ? $sites->num_rows : 0;
             color: #fff;
         }
 
-        /* ── STATS ── */
         .stats-row {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -164,7 +158,6 @@ $totalSites = $sites ? $sites->num_rows : 0;
 
         .stat-sub { font-size: 13px; color: #9ca3af; }
 
-        /* ── SITES GRID ── */
         .section-title {
             font-size: 20px;
             font-weight: 800;
@@ -263,7 +256,6 @@ $totalSites = $sites ? $sites->num_rows : 0;
         .btn-view:hover { background: #e9edf5; transform: translateY(-1px); }
         .btn-delete:hover { background: #fecaca; transform: translateY(-1px); }
 
-        /* ── CREATE MODAL ── */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -343,7 +335,6 @@ $totalSites = $sites ? $sites->num_rows : 0;
 </head>
 <body>
 
-<!-- Topbar -->
 <header class="topbar">
     <div class="topbar-brand">PageCraft</div>
     <div class="topbar-right">
@@ -355,7 +346,6 @@ $totalSites = $sites ? $sites->num_rows : 0;
     </div>
 </header>
 
-<!-- Main -->
 <main class="main">
     <div class="page-header">
         <div>
@@ -367,7 +357,6 @@ $totalSites = $sites ? $sites->num_rows : 0;
         </button>
     </div>
 
-    <!-- Stats -->
     <div class="stats-row">
         <div class="stat-card">
             <div class="stat-label">Total Websites</div>
@@ -396,11 +385,9 @@ $totalSites = $sites ? $sites->num_rows : 0;
         </div>
     </div>
 
-    <!-- Sites Grid -->
     <div class="section-title">Your Websites</div>
 
     <?php
-    // Re-query sites for display
     $sites = $conn->query("SELECT * FROM sites WHERE user_id = " . $_SESSION['user_id'] . " ORDER BY created_at DESC");
     ?>
 
@@ -435,7 +422,6 @@ $totalSites = $sites ? $sites->num_rows : 0;
     <?php endif; ?>
 </main>
 
-<!-- Create Modal -->
 <div class="modal-overlay" id="createModal">
     <div class="modal">
         <h2 class="modal-title">🌐 Create New Website</h2>
@@ -451,7 +437,6 @@ $totalSites = $sites ? $sites->num_rows : 0;
 </div>
 
 <script>
-// Close modal on overlay click
 document.getElementById('createModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
 });
