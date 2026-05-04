@@ -28,9 +28,9 @@ $totalSections = $sections ? $sections->num_rows : 0;
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editor | <?php echo htmlspecialchars($site['site_name']); ?></title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -467,21 +467,61 @@ $totalSections = $sections ? $sections->num_rows : 0;
             </button>
         </div>
 
-        <div class="add-form">
-            <div class="add-form-title" id="formTitle">📝 Add Text Section</div>
-            <form action="../actions/save_section.php?site_id=<?php echo $site_id; ?>" method="POST">
-                <input type="hidden" name="page_id" value="<?php echo $page_id; ?>">
-                <input type="hidden" name="type" id="sectionType" value="text">
+       <div class="add-form">
+    <div class="add-form-title" id="formTitle">📝 Add Text Section</div>
+    <form action="../actions/save_section.php?site_id=<?php echo $site_id; ?>" method="POST">
+        <input type="hidden" name="page_id" value="<?php echo $page_id; ?>">
+        <input type="hidden" name="site_id" value="<?php echo $site_id; ?>">
+        <input type="hidden" name="type" id="sectionType" value="text">
 
-                <div class="form-group" id="contentGroup">
-                    <label id="contentLabel">Text Content</label>
-                    <textarea name="content" id="contentInput" placeholder="Enter your text content here..."></textarea>
-                </div>
-
-                <button type="submit" class="add-btn">+ Add Section</button>
-            </form>
+        <div class="form-group" id="contentGroup">
+            <label id="contentLabel">Text Content</label>
+            <textarea name="content" id="contentInput" placeholder="Enter your text content here..."></textarea>
         </div>
-    </div>
+
+        <div class="form-group" id="styleGroup">
+            <label>Text Align</label>
+            <select name="text_align">
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Font Size</label>
+            <input type="number" name="font_size" placeholder="e.g. 24">
+        </div>
+
+        <div class="form-group">
+            <label>Text Color</label>
+            <input type="color" name="color">
+        </div>
+
+        <div class="form-group">
+            <label>Font Weight</label>
+            <select name="font_weight">
+                <option value="normal">Normal</option>
+                <option value="bold">Bold</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+    <label>Font Family</label>
+    <select name="font_family">
+        <option value="Arial, sans-serif">Arial</option>
+        <option value="Segoe UI, sans-serif">Segoe UI</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="Times New Roman, serif">Times New Roman</option>
+        <option value="Courier New', monospace">Courier New</option>
+        <option value="Poppins, sans-serif">Poppins</option>
+        <option value="Roboto, sans-serif">Roboto</option>
+        </select>
+         </div>
+
+        <button type="submit" class="add-btn">+ Add Section</button>
+    </form>
+</div>
 
     <!-- Canvas -->
     <div class="canvas-panel">
@@ -505,12 +545,30 @@ $totalSections = $sections ? $sections->num_rows : 0;
                             <p>Your hero section</p>
                         </div>
 
-                    <?php elseif ($sec['type'] === 'header'): ?>
-                        <div class="section-header-block">
-                            <span><?php echo htmlspecialchars($sec['content']); ?></span>
-                            <span style="font-size:14px; opacity:0.7;">Navigation</span>
-                        </div>
+                    
+    <?php elseif ($sec['type'] === 'header'): ?>
+<?php $style = json_decode($sec['style'] ?? '{}', true); ?>
 
+<div class="section-header-wrapper" data-id="<?php echo $sec['id']; ?>">
+    <div style="padding:10px 20px;">
+        <label>Header Background:</label>
+        <input type="color"
+               class="header-bg-picker"
+               value="<?php echo $style['bg'] ?? '#1a1a2e'; ?>">
+
+        <label style="margin-left:10px;">Text Color:</label>
+        <input type="color"
+               class="header-text-picker"
+               value="<?php echo $style['color'] ?? '#ffffff'; ?>">
+    </div>
+
+    <div class="section-header-block live-header"
+         style="background: <?php echo $style['bg'] ?? '#1a1a2e'; ?>;
+                color: <?php echo $style['color'] ?? '#ffffff'; ?>;">
+        <span><?php echo htmlspecialchars($sec['content']); ?></span>
+        <span style="font-size:14px; opacity:0.7;">Navigation</span>
+    </div>
+</div>
                     <?php elseif ($sec['type'] === 'footer'): ?>
                         <div class="section-footer-block">
                             <?php echo htmlspecialchars($sec['content']); ?>
@@ -526,14 +584,25 @@ $totalSections = $sections ? $sections->num_rows : 0;
                         </div>
 
                     <?php elseif ($sec['type'] === 'divider'): ?>
-                        <div style="padding: 16px 32px;">
-                            <hr style="border:none; border-top:3px solid; border-image:linear-gradient(135deg,#6c3afc,#e040fb) 1;">
-                        </div>
+    <div style="padding: 16px 32px;">
+        <hr style="border:none; border-top:3px solid; border-image:linear-gradient(135deg,#6c3afc,#e040fb) 1;">
+    </div>
 
-                    <?php else: ?>
-                        <div class="section-text-block">
-                            <?php echo nl2br(htmlspecialchars($sec['content'])); ?>
-                        </div>
+<?php elseif ($sec['type'] === 'text'): ?>
+<?php $style = json_decode($sec['style'] ?? '{}', true); ?>
+
+<div class="section-text-block"
+     style="
+        text-align: <?php echo $style['text_align'] ?? 'left'; ?>;
+        font-size: <?php echo $style['font_size'] ?? '16px'; ?>;
+        color: <?php echo $style['color'] ?? '#000'; ?>;
+        font-weight: <?php echo $style['font_weight'] ?? 'normal'; ?>;
+        font-family: <?php echo $style['font_family'] ?? 'Arial, sans-serif'; ?>;
+     ">
+
+    <?php echo nl2br(htmlspecialchars($sec['content'])); ?>
+
+</div>
                     <?php endif; ?>
 
                     <!-- Controls -->
@@ -657,6 +726,24 @@ document.getElementById('editModal').addEventListener('click', function(e) {
 
 document.getElementById('settingsModal').addEventListener('click', function(e) {
     if (e.target === this) closeSettings();
+});
+
+document.querySelectorAll('.section-block').forEach(section => {
+    const header = section.querySelector('.live-header');
+    const bgPicker = section.querySelector('.header-bg-picker');
+    const textPicker = section.querySelector('.header-text-picker');
+
+    if (header && bgPicker && textPicker) {
+
+        bgPicker.addEventListener('input', function() {
+            header.style.background = this.value;
+        });
+
+        textPicker.addEventListener('input', function() {
+            header.style.color = this.value;
+        });
+
+    }
 });
 </script>
 </body>

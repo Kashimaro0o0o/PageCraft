@@ -1,17 +1,17 @@
 <?php
 include "../config/db.php";
 
+$site_id = isset($_GET['site_id']) ? (int)$_GET['site_id'] : 0;
+if ($site_id <= 0) { header("Location: dashboard.php"); exit(); }
+
 $ip        = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+
 $stmt = $conn->prepare("INSERT INTO visitor_logs (site_id, ip_address, user_agent) VALUES (?, ?, ?)");
 $stmt->bind_param("iss", $site_id, $ip, $userAgent);
 $stmt->execute();
 $stmt->close();
 
-$site_id = isset($_GET['site_id']) ? (int)$_GET['site_id'] : 0;
-if ($site_id <= 0) { header("Location: dashboard.php"); exit(); }
-
-// Get site info
 $site = $conn->query("SELECT * FROM sites WHERE id = $site_id")->fetch_assoc();
 if (!$site) { header("Location: dashboard.php"); exit(); }
 
@@ -22,13 +22,11 @@ if ($site['is_published'] == 0 && !$isPreview) {
     exit();
 }
 
-// Get page
 $page = $conn->query("SELECT * FROM pages WHERE site_id = $site_id")->fetch_assoc();
 if (!$page) { header("Location: dashboard.php"); exit(); }
 
 $page_id = $page['id'];
 
-// Get sections
 $sections = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND is_archived = 0 ORDER BY position ASC");
 ?>
 <!DOCTYPE html>
@@ -316,19 +314,36 @@ $sections = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND is
             </div>
 
         <?php elseif ($sec['type'] === 'header'): ?>
-            <div class="section-header">
-                <span class="brand"><?php echo htmlspecialchars($sec['content']); ?></span>
-                <nav>
-                    <a href="#">Home</a>
-                    <a href="#">About</a>
-                    <a href="#">Contact</a>
-                </nav>
-            </div>
+<?php $style = json_decode($sec['style'] ?? '{}', true); ?>
 
-        <?php elseif ($sec['type'] === 'text'): ?>
-            <div class="section-text">
-                <?php echo nl2br(htmlspecialchars($sec['content'])); ?>
-            </div>
+<div class="section-header"
+     style="
+        background: <?php echo $style['bg'] ?? '#1a1a2e'; ?>;
+        color: <?php echo $style['color'] ?? '#ffffff'; ?>;
+     ">
+    <span class="brand"><?php echo htmlspecialchars($sec['content']); ?></span>
+    <nav>
+        <a href="#">Home</a>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+    </nav>
+</div>
+
+   <?php elseif ($sec['type'] === 'text'): ?>
+<?php $style = json_decode($sec['style'], true); ?>
+
+<div class="section-text"
+     style="
+        text-align: <?php echo $style['text_align'] ?? 'left'; ?>;
+        font-size: <?php echo $style['font_size'] ?? '16px'; ?>;
+        color: <?php echo $style['color'] ?? '#000'; ?>;
+        font-weight: <?php echo $style['font_weight'] ?? 'normal'; ?>;
+        font-family: <?php echo $style['font_family'] ?? 'Arial, sans-serif'; ?>;
+     ">
+     
+     <?php echo nl2br(htmlspecialchars($sec['content'])); ?>
+
+</div>
 
         <?php elseif ($sec['type'] === 'image'): ?>
             <div class="section-image">
