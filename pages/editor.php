@@ -434,7 +434,7 @@ $totalSections = $sections ? $sections->num_rows : 0;
         <a href="logs.php" class="settings-btn">📊 Logs</a>
         <button onclick="openSettings()" class="settings-btn">⚙️ Settings</button>
         <a href="view.php?site_id=<?php echo $site_id; ?>&preview=1" class="preview-btn" target="_blank">👁️ Preview</a>
-        <a href="../actions/publish.php?site_id=<?php echo $site_id; ?>" class="preview-btn" target="_blank">🚀 Publish</a>
+        <a href="../actions/publish.php?site_id=<?php echo $site_id; ?>" class="preview-btn">🚀 Publish</a>
         <div class="topbar-avatar"><?php echo strtoupper($username[0]); ?></div>
     </div>
 </header>
