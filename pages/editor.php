@@ -365,7 +365,8 @@ $totalSections = $sections ? $sections->num_rows : 0;
         <span class="site-name-badge">🌐 <?php echo htmlspecialchars($site['site_name']); ?></span>
     </div>
     <div class="topbar-right">
-        <a href="view.php?site_id=<?php echo $site_id; ?>" class="preview-btn" target="_blank">👁️ Preview</a>
+        <a href="view.php?site_id=<?php echo $site_id; ?>&preview=1" class="preview-btn" target="_blank">👁️ Preview</a>
+        <a href="../actions/publish.php?site_id=<?php echo $site_id; ?>" class="preview-btn" target="_blank">🚀 Publish</a>
         <div class="topbar-avatar"><?php echo strtoupper($username[0]); ?></div>
     </div>
 </header>

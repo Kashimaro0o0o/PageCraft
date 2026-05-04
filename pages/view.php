@@ -8,6 +8,13 @@ if ($site_id <= 0) { header("Location: dashboard.php"); exit(); }
 $site = $conn->query("SELECT * FROM sites WHERE id = $site_id")->fetch_assoc();
 if (!$site) { header("Location: dashboard.php"); exit(); }
 
+$isPreview = isset($_GET['preview']);
+
+if ($site['is_published'] == 0 && !$isPreview) {
+    echo "This site is not published yet.";
+    exit();
+}
+
 // Get page
 $page = $conn->query("SELECT * FROM pages WHERE site_id = $site_id")->fetch_assoc();
 if (!$page) { header("Location: dashboard.php"); exit(); }
