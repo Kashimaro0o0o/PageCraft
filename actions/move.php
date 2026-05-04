@@ -1,22 +1,35 @@
 <?php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login.php"); exit();
+}
 include "../config/db.php";
 
-$id = $_GET['id'];
-$dir = $_GET['dir'];
-$site_id = $_GET['site_id'];
+$id      = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$dir     = $_GET['dir'] ?? 'up';
+$site_id = isset($_GET['site_id']) ? (int)$_GET['site_id'] : 0;
 
-$current = $conn->query("SELECT * FROM sections WHERE id=$id")->fetch_assoc();
+// Get current section
+$section = $conn->query("SELECT * FROM sections WHERE id = $id")->fetch_assoc();
+if (!$section) { header("Location: ../pages/editor.php?site_id=$site_id"); exit(); }
 
-if ($dir == "up") {
-    $swap = $conn->query("SELECT * FROM sections WHERE page_id=".$current['page_id']." AND position < ".$current['position']." ORDER BY position DESC LIMIT 1")->fetch_assoc();
+$page_id  = $section['page_id'];
+$position = $section['position'];
+
+if ($dir === 'up') {
+    // Find section above
+    $swap = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND position < $position AND is_archived = 0 ORDER BY position DESC LIMIT 1")->fetch_assoc();
 } else {
-    $swap = $conn->query("SELECT * FROM sections WHERE page_id=".$current['page_id']." AND position > ".$current['position']." ORDER BY position ASC LIMIT 1")->fetch_assoc();
+    // Find section below
+    $swap = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND position > $position AND is_archived = 0 ORDER BY position ASC LIMIT 1")->fetch_assoc();
 }
 
 if ($swap) {
-    $conn->query("UPDATE sections SET position=".$swap['position']." WHERE id=".$current['id']);
-    $conn->query("UPDATE sections SET position=".$current['position']." WHERE id=".$swap['id']);
+    // Swap positions
+    $conn->query("UPDATE sections SET position = {$swap['position']} WHERE id = $id");
+    $conn->query("UPDATE sections SET position = $position WHERE id = {$swap['id']}");
 }
 
 header("Location: ../pages/editor.php?site_id=$site_id");
+exit();
 ?>
