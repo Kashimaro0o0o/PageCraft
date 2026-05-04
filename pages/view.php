@@ -1,6 +1,13 @@
 <?php
 include "../config/db.php";
 
+$ip        = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+$stmt = $conn->prepare("INSERT INTO visitor_logs (site_id, ip_address, user_agent) VALUES (?, ?, ?)");
+$stmt->bind_param("iss", $site_id, $ip, $userAgent);
+$stmt->execute();
+$stmt->close();
+
 $site_id = isset($_GET['site_id']) ? (int)$_GET['site_id'] : 0;
 if ($site_id <= 0) { header("Location: dashboard.php"); exit(); }
 
