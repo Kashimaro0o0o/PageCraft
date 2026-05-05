@@ -226,6 +226,24 @@ $totalSections = $sections ? $sections->num_rows : 0;
         .form-group input:focus,
         .form-group textarea:focus { border-color: #6c3afc; box-shadow: 0 0 0 3px rgba(108,58,252,0.1); }
 
+        /* Upload drop zone */
+        .upload-drop-zone {
+            border: 2px dashed #c4b5fd;
+            border-radius: 14px;
+            padding: 28px 16px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(108,58,252,0.03);
+            transition: all 0.2s;
+        }
+        .upload-drop-zone:hover, .upload-drop-zone.drag-over {
+            border-color: #6c3afc;
+            background: rgba(108,58,252,0.08);
+        }
+        .upload-icon { font-size: 32px; margin-bottom: 8px; }
+        .upload-text { font-size: 13px; font-weight: 600; color: #6c3afc; margin-bottom: 4px; }
+        .upload-hint { font-size: 11px; color: #9ca3af; }
+
         .add-btn {
             width: 100%;
             padding: 13px;
@@ -469,7 +487,7 @@ $totalSections = $sections ? $sections->num_rows : 0;
 
        <div class="add-form">
     <div class="add-form-title" id="formTitle">📝 Add Text Section</div>
-    <form action="../actions/save_section.php?site_id=<?php echo $site_id; ?>" method="POST">
+    <form action="../actions/save_section.php?site_id=<?php echo $site_id; ?>" method="POST" enctype="multipart/form-data" id="sectionForm">
         <input type="hidden" name="page_id" value="<?php echo $page_id; ?>">
         <input type="hidden" name="site_id" value="<?php echo $site_id; ?>">
         <input type="hidden" name="type" id="sectionType" value="text">
@@ -479,49 +497,65 @@ $totalSections = $sections ? $sections->num_rows : 0;
             <textarea name="content" id="contentInput" placeholder="Enter your text content here..."></textarea>
         </div>
 
-        <div class="form-group" id="styleGroup">
-            <label>Text Align</label>
-            <select name="text_align">
-                <option value="left">Left</option>
-                <option value="center">Center</option>
-                <option value="right">Right</option>
-            </select>
+        <!-- Image upload group (shown only for image type) -->
+        <div class="form-group" id="uploadGroup" style="display:none;">
+            <label>Upload Photo</label>
+            <div class="upload-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Click to browse or drag & drop</div>
+                <div class="upload-hint">JPG, PNG, GIF, WEBP</div>
+            </div>
+            <input type="file" name="image_file" id="fileInput" accept="image/*" style="display:none;">
+            <img id="imagePreview" src="" alt="Preview" style="display:none; max-width:100%; border-radius:10px; margin-top:10px;">
         </div>
 
-        <div class="form-group">
-            <label>Font Size</label>
-            <input type="number" name="font_size" placeholder="e.g. 24">
-        </div>
+        <!-- Text styling options (hidden for image type) -->
+        <div id="textStyleOptions">
+            <div class="form-group" id="styleGroup">
+                <label>Text Align</label>
+                <select name="text_align">
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                </select>
+            </div>
 
-        <div class="form-group">
-            <label>Text Color</label>
-            <input type="color" name="color">
-        </div>
+            <div class="form-group">
+                <label>Font Size</label>
+                <input type="number" name="font_size" placeholder="e.g. 24">
+            </div>
 
-        <div class="form-group">
-            <label>Font Weight</label>
-            <select name="font_weight">
-                <option value="normal">Normal</option>
-                <option value="bold">Bold</option>
-            </select>
+            <div class="form-group">
+                <label>Text Color</label>
+                <input type="color" name="color">
+            </div>
+
+            <div class="form-group">
+                <label>Font Weight</label>
+                <select name="font_weight">
+                    <option value="normal">Normal</option>
+                    <option value="bold">Bold</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Font Family</label>
+                <select name="font_family">
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="Segoe UI, sans-serif">Segoe UI</option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="Times New Roman, serif">Times New Roman</option>
+                    <option value="Courier New, monospace">Courier New</option>
+                    <option value="Poppins, sans-serif">Poppins</option>
+                    <option value="Roboto, sans-serif">Roboto</option>
+                </select>
+            </div>
         </div>
-        
-        <div class="form-group">
-    <label>Font Family</label>
-    <select name="font_family">
-        <option value="Arial, sans-serif">Arial</option>
-        <option value="Segoe UI, sans-serif">Segoe UI</option>
-        <option value="Georgia, serif">Georgia</option>
-        <option value="Times New Roman, serif">Times New Roman</option>
-        <option value="Courier New', monospace">Courier New</option>
-        <option value="Poppins, sans-serif">Poppins</option>
-        <option value="Roboto, sans-serif">Roboto</option>
-        </select>
-         </div>
 
         <button type="submit" class="add-btn">+ Add Section</button>
     </form>
 </div>
+</div><!-- end left-panel -->
 
     <!-- Canvas -->
     <div class="canvas-panel">
@@ -669,7 +703,7 @@ function selectType(type, btn) {
 
     const labels = {
         text:    { title: '📝 Add Text Section',   label: 'Text Content',    placeholder: 'Enter your text content here...', input: 'textarea' },
-        image:   { title: '🖼️ Add Image Section',  label: 'Image URL',       placeholder: 'https://example.com/image.jpg',   input: 'text' },
+        image:   { title: '🖼️ Add Image Section',  label: 'Image URL (optional)', placeholder: 'https://example.com/image.jpg', input: 'text' },
         hero:    { title: '🚀 Add Hero Section',   label: 'Hero Title',      placeholder: 'Welcome to My Website!',          input: 'text' },
         header:  { title: '🔝 Add Header Section', label: 'Brand Name',      placeholder: 'My Awesome Website',              input: 'text' },
         footer:  { title: '🔚 Add Footer Section', label: 'Footer Text',     placeholder: '© 2026 My Website.',              input: 'text' },
@@ -678,29 +712,83 @@ function selectType(type, btn) {
 
     const cfg = labels[type];
     document.getElementById('formTitle').textContent = cfg.title;
-    document.getElementById('contentLabel').textContent = cfg.label;
 
-    const contentGroup = document.getElementById('contentGroup');
-    if (cfg.input === 'none') {
-        contentGroup.style.display = 'none';
-    } else {
+    const contentGroup  = document.getElementById('contentGroup');
+    const uploadGroup   = document.getElementById('uploadGroup');
+    const textStyleOpts = document.getElementById('textStyleOptions');
+
+    if (type === 'image') {
+        // Show URL input + upload; hide text styling
         contentGroup.style.display = '';
+        uploadGroup.style.display  = '';
+        textStyleOpts.style.display = 'none';
+        document.getElementById('contentLabel').textContent = 'Image URL (optional)';
         const current = document.getElementById('contentInput');
-        if (cfg.input === 'text' && current.tagName === 'TEXTAREA') {
+        if (current.tagName === 'TEXTAREA') {
             const input = document.createElement('input');
             input.type = 'text'; input.name = 'content';
             input.id = 'contentInput'; input.placeholder = cfg.placeholder;
             current.replaceWith(input);
-        } else if (cfg.input === 'textarea' && current.tagName === 'INPUT') {
-            const textarea = document.createElement('textarea');
-            textarea.name = 'content'; textarea.id = 'contentInput';
-            textarea.placeholder = cfg.placeholder; textarea.style.minHeight = '100px';
-            current.replaceWith(textarea);
         } else {
             current.placeholder = cfg.placeholder;
         }
+    } else {
+        uploadGroup.style.display   = 'none';
+        textStyleOpts.style.display = '';
+        document.getElementById('contentLabel').textContent = cfg.label;
+
+        if (cfg.input === 'none') {
+            contentGroup.style.display = 'none';
+        } else {
+            contentGroup.style.display = '';
+            const current = document.getElementById('contentInput');
+            if (cfg.input === 'text' && current.tagName === 'TEXTAREA') {
+                const input = document.createElement('input');
+                input.type = 'text'; input.name = 'content';
+                input.id = 'contentInput'; input.placeholder = cfg.placeholder;
+                current.replaceWith(input);
+            } else if (cfg.input === 'textarea' && current.tagName === 'INPUT') {
+                const textarea = document.createElement('textarea');
+                textarea.name = 'content'; textarea.id = 'contentInput';
+                textarea.placeholder = cfg.placeholder; textarea.style.minHeight = '100px';
+                current.replaceWith(textarea);
+            } else {
+                current.placeholder = cfg.placeholder;
+            }
+        }
     }
 }
+
+// File input preview
+document.getElementById('fileInput').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const preview = document.getElementById('imagePreview');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        document.querySelector('.upload-drop-zone .upload-text').textContent = file.name;
+        document.querySelector('.upload-drop-zone .upload-icon').textContent = '✅';
+    };
+    reader.readAsDataURL(file);
+});
+
+// Drag and drop
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('fileInput').files = dt.files;
+        document.getElementById('fileInput').dispatchEvent(new Event('change'));
+    }
+});
 
 function openEditModal(id, content) {
     document.getElementById('editSectionId').value = id;
