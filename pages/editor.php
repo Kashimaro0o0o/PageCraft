@@ -509,6 +509,18 @@ $totalSections = $sections ? $sections->num_rows : 0;
             <img id="imagePreview" src="" alt="Preview" style="display:none; max-width:100%; border-radius:10px; margin-top:10px;">
         </div>
 
+        <!-- Header-specific color pickers (shown only for header type) -->
+        <div id="headerColorOptions" style="display:none;">
+            <div class="form-group">
+                <label>Background Color</label>
+                <input type="color" name="header_bg" id="headerBgInput" value="#1a1a2e" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;padding:4px;">
+            </div>
+            <div class="form-group">
+                <label>Text Color</label>
+                <input type="color" name="header_color" id="headerColorInput" value="#ffffff" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;padding:4px;">
+            </div>
+        </div>
+
         <!-- Text styling options (hidden for image type) -->
         <div id="textStyleOptions">
             <div class="form-group" id="styleGroup">
@@ -584,23 +596,15 @@ $totalSections = $sections ? $sections->num_rows : 0;
 <?php $style = json_decode($sec['style'] ?? '{}', true); ?>
 
 <div class="section-header-wrapper" data-id="<?php echo $sec['id']; ?>">
-    <div style="padding:10px 20px;">
-        <label>Header Background:</label>
-        <input type="color"
-               class="header-bg-picker"
-               value="<?php echo $style['bg'] ?? '#1a1a2e'; ?>">
-
-        <label style="margin-left:10px;">Text Color:</label>
-        <input type="color"
-               class="header-text-picker"
-               value="<?php echo $style['color'] ?? '#ffffff'; ?>">
-    </div>
-
     <div class="section-header-block live-header"
          style="background: <?php echo $style['bg'] ?? '#1a1a2e'; ?>;
-                color: <?php echo $style['color'] ?? '#ffffff'; ?>;">
+                color: <?php echo $style['color'] ?? '#ffffff'; ?>;
+                text-align: <?php echo $style['text_align'] ?? 'left'; ?>;
+                font-size: <?php echo $style['font_size'] ?? '24px'; ?>;
+                font-weight: <?php echo $style['font_weight'] ?? 'bold'; ?>;
+                font-family: <?php echo $style['font_family'] ?? 'Arial, sans-serif'; ?>;">
         <span><?php echo htmlspecialchars($sec['content']); ?></span>
-        <span style="font-size:14px; opacity:0.7;">Navigation</span>
+        <span style="font-size:14px; opacity:0.7; font-size:14px;">Navigation</span>
     </div>
 </div>
                     <?php elseif ($sec['type'] === 'footer'): ?>
@@ -643,7 +647,7 @@ $totalSections = $sections ? $sections->num_rows : 0;
                     <div class="section-controls">
                         <a href="../actions/move.php?id=<?php echo $sec['id']; ?>&dir=up&site_id=<?php echo $site_id; ?>" class="ctrl-btn ctrl-up">⬆️</a>
                         <a href="../actions/move.php?id=<?php echo $sec['id']; ?>&dir=down&site_id=<?php echo $site_id; ?>" class="ctrl-btn ctrl-down">⬇️</a>
-                        <button onclick="openEditModal(<?php echo $sec['id']; ?>, '<?php echo addslashes(htmlspecialchars($sec['content'])); ?>')" class="ctrl-btn ctrl-edit">✏️</button>
+                        <button onclick="openEditModal(<?php echo $sec['id']; ?>, '<?php echo addslashes(htmlspecialchars($sec['content'])); ?>', '<?php echo $sec['type']; ?>', <?php echo htmlspecialchars($sec['style'] ?? '{}'); ?>)" class="ctrl-btn ctrl-edit">✏️</button>
                         <a href="../actions/archive.php?id=<?php echo $sec['id']; ?>&site_id=<?php echo $site_id; ?>"
                            class="ctrl-btn ctrl-delete"
                            onclick="return confirm('Remove this section?');">🗑️</a>
@@ -664,18 +668,132 @@ $totalSections = $sections ? $sections->num_rows : 0;
 
 <!-- Edit Section Modal -->
 <div class="modal-overlay" id="editModal">
-    <div class="modal">
+    <div class="modal" style="max-width:560px; max-height:90vh; overflow-y:auto;">
         <div class="modal-title">✏️ Edit Section</div>
-        <div class="modal-sub">Update your section content</div>
+        <div class="modal-sub" id="editModalSub">Update your section content</div>
         <form action="../actions/edit_section.php" method="POST">
             <input type="hidden" name="id" id="editSectionId">
             <input type="hidden" name="site_id" value="<?php echo $site_id; ?>">
-            <textarea name="content" id="editSectionContent"></textarea>
+            <input type="hidden" name="section_type" id="editSectionType">
+
+            <!-- Content field -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;" id="editContentLabel">Content</label>
+                <textarea name="content" id="editSectionContent" style="width:100%;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;min-height:90px;resize:vertical;outline:none;font-family:inherit;"></textarea>
+            </div>
+
+            <!-- Text style fields (shown for text, hero, footer, divider) -->
+            <div id="editTextStyles">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Align</label>
+                        <select name="text_align" id="editTextAlign" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                            <option value="left">Left</option>
+                            <option value="center">Center</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Size (px)</label>
+                        <input type="number" name="font_size" id="editFontSize" placeholder="e.g. 16" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Color</label>
+                        <input type="color" name="color" id="editColor" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;padding:4px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Weight</label>
+                        <select name="font_weight" id="editFontWeight" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                            <option value="normal">Normal</option>
+                            <option value="bold">Bold</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Family</label>
+                    <select name="font_family" id="editFontFamily" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="Segoe UI, sans-serif">Segoe UI</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="Times New Roman, serif">Times New Roman</option>
+                        <option value="Courier New, monospace">Courier New</option>
+                        <option value="Poppins, sans-serif">Poppins</option>
+                        <option value="Roboto, sans-serif">Roboto</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Header-specific style fields -->
+            <div id="editHeaderStyles" style="display:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Background Color</label>
+                        <input type="color" name="bg_color" id="editBgColor" value="#1a1a2e" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;padding:4px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Color</label>
+                        <input type="color" name="text_color" id="editHeaderTextColor" value="#ffffff" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;padding:4px;">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Align</label>
+                        <select name="text_align" id="editHeaderAlign" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                            <option value="left">Left</option>
+                            <option value="center">Center</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Size (px)</label>
+                        <input type="number" name="font_size" id="editHeaderFontSize" placeholder="e.g. 24" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Weight</label>
+                        <select name="font_weight" id="editHeaderWeight" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                            <option value="normal">Normal</option>
+                            <option value="bold">Bold</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Family</label>
+                        <select name="font_family" id="editHeaderFamily" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                            <option value="Arial, sans-serif">Arial</option>
+                            <option value="Segoe UI, sans-serif">Segoe UI</option>
+                            <option value="Georgia, serif">Georgia</option>
+                            <option value="Times New Roman, serif">Times New Roman</option>
+                            <option value="Courier New, monospace">Courier New</option>
+                            <option value="Poppins, sans-serif">Poppins</option>
+                            <option value="Roboto, sans-serif">Roboto</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="modal-btns">
                 <button type="submit" class="modal-submit">Save Changes</button>
                 <button type="button" class="modal-cancel" onclick="closeEditModal()">Cancel</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Publish Success Popup -->
+<div class="modal-overlay <?php echo isset($_GET['published']) ? 'active' : ''; ?>" id="publishModal">
+    <div class="modal" style="text-align:center; max-width:420px;">
+        <div style="font-size:64px; margin-bottom:16px;">🎉</div>
+        <div class="modal-title" style="font-size:26px;">Site Published!</div>
+        <div class="modal-sub" style="margin-bottom:24px;">
+            <strong><?php echo htmlspecialchars($site['site_name']); ?></strong> is now live and visible to everyone.
+        </div>
+        <div class="modal-btns" style="justify-content:center;">
+            <a href="view.php?site_id=<?php echo $site_id; ?>" class="modal-submit" style="text-decoration:none; text-align:center; padding:13px 24px;">👁️ View Live Site</a>
+            <button type="button" class="modal-cancel" onclick="document.getElementById('publishModal').classList.remove('active')">Close</button>
+        </div>
     </div>
 </div>
 
@@ -717,11 +835,14 @@ function selectType(type, btn) {
     const uploadGroup   = document.getElementById('uploadGroup');
     const textStyleOpts = document.getElementById('textStyleOptions');
 
+    const headerColorOpts = document.getElementById('headerColorOptions');
+
     if (type === 'image') {
         // Show URL input + upload; hide text styling
         contentGroup.style.display = '';
         uploadGroup.style.display  = '';
         textStyleOpts.style.display = 'none';
+        headerColorOpts.style.display = 'none';
         document.getElementById('contentLabel').textContent = 'Image URL (optional)';
         const current = document.getElementById('contentInput');
         if (current.tagName === 'TEXTAREA') {
@@ -734,7 +855,8 @@ function selectType(type, btn) {
         }
     } else {
         uploadGroup.style.display   = 'none';
-        textStyleOpts.style.display = '';
+        headerColorOpts.style.display = (type === 'header') ? '' : 'none';
+        textStyleOpts.style.display = (type === 'hero' || type === 'divider' || type === 'footer') ? 'none' : '';
         document.getElementById('contentLabel').textContent = cfg.label;
 
         if (cfg.input === 'none') {
@@ -790,10 +912,46 @@ dropZone.addEventListener('drop', e => {
     }
 });
 
-function openEditModal(id, content) {
-    document.getElementById('editSectionId').value = id;
+function openEditModal(id, content, type, styleObj) {
+    document.getElementById('editSectionId').value   = id;
     document.getElementById('editSectionContent').value = content;
+    document.getElementById('editSectionType').value = type;
+
+    const textStyles   = document.getElementById('editTextStyles');
+    const headerStyles = document.getElementById('editHeaderStyles');
+    const sub          = document.getElementById('editModalSub');
+
+    if (type === 'header') {
+        textStyles.style.display   = 'none';
+        headerStyles.style.display = '';
+        sub.textContent = 'Edit header brand name and styles';
+        document.getElementById('editBgColor').value          = styleObj.bg          || '#1a1a2e';
+        document.getElementById('editHeaderTextColor').value  = styleObj.color        || '#ffffff';
+        document.getElementById('editHeaderAlign').value      = styleObj.text_align   || 'left';
+        document.getElementById('editHeaderFontSize').value   = parseInt(styleObj.font_size) || 24;
+        document.getElementById('editHeaderWeight').value     = styleObj.font_weight  || 'bold';
+        setSelectValue('editHeaderFamily', styleObj.font_family || 'Arial, sans-serif');
+    } else {
+        textStyles.style.display   = (type === 'divider' || type === 'hero') ? 'none' : '';
+        headerStyles.style.display = 'none';
+        sub.textContent = 'Update your section content and styles';
+        if (styleObj) {
+            document.getElementById('editTextAlign').value   = styleObj.text_align  || 'left';
+            document.getElementById('editFontSize').value    = parseInt(styleObj.font_size) || 16;
+            document.getElementById('editColor').value       = styleObj.color        || '#000000';
+            document.getElementById('editFontWeight').value  = styleObj.font_weight  || 'normal';
+            setSelectValue('editFontFamily', styleObj.font_family || 'Arial, sans-serif');
+        }
+    }
+
     document.getElementById('editModal').classList.add('active');
+}
+
+function setSelectValue(id, value) {
+    const sel = document.getElementById(id);
+    for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === value) { sel.selectedIndex = i; return; }
+    }
 }
 
 function closeEditModal() {
@@ -816,23 +974,8 @@ document.getElementById('settingsModal').addEventListener('click', function(e) {
     if (e.target === this) closeSettings();
 });
 
-document.querySelectorAll('.section-block').forEach(section => {
-    const header = section.querySelector('.live-header');
-    const bgPicker = section.querySelector('.header-bg-picker');
-    const textPicker = section.querySelector('.header-text-picker');
 
-    if (header && bgPicker && textPicker) {
 
-        bgPicker.addEventListener('input', function() {
-            header.style.background = this.value;
-        });
-
-        textPicker.addEventListener('input', function() {
-            header.style.color = this.value;
-        });
-
-    }
-});
 </script>
 </body>
 </html>

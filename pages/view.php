@@ -165,6 +165,7 @@ $sections = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND is
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($site['site_name']); ?></title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@400;700&family=Inter:wght@400;600&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #1a1a2e; }
