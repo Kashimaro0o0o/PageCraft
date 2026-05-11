@@ -191,9 +191,8 @@ $sections = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND is
         .section-header nav a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; font-weight: 600; transition: color 0.2s; }
         .section-header nav a:hover { color: #fff; }
         .section-text { max-width: 800px; margin: 0 auto; padding: 60px 40px; font-size: 17px; line-height: 1.8; color: #374151; }
-        .section-image { padding: 40px; text-align: center; background: #f8f9ff; }
-        .section-image img { max-width: 100%; max-height: 500px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
-        .section-image .img-placeholder { display: inline-flex; align-items: center; justify-content: center; width: 100%; max-width: 600px; height: 300px; background: linear-gradient(135deg, #f3f4f6, #e9edf5); border-radius: 16px; font-size: 64px; color: #9ca3af; }
+        .section-image { padding: 40px; background: #f8f9ff; position: relative; min-height: 200px; overflow: visible; }
+        .section-image img { border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); display: block; }
         .section-divider { padding: 10px 48px; }
         .section-divider hr { border: none; height: 3px; background: linear-gradient(135deg, #6c3afc, #e040fb, #ff6b6b); border-radius: 999px; }
         .section-footer { background: #1a1a2e; color: rgba(255,255,255,0.6); padding: 32px 48px; text-align: center; font-size: 14px; }
@@ -240,9 +239,20 @@ $sections = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND is
                 <?php echo nl2br(htmlspecialchars($sec['content'])); ?>
             </div>
         <?php elseif ($sec['type'] === 'image'): ?>
-            <div class="section-image">
+            <?php
+                $imgStyle = json_decode($sec['style'] ?? '{}', true) ?: [];
+                $imgW     = !empty($imgStyle['img_width'])  ? (int)$imgStyle['img_width']  : null;
+                $imgH     = !empty($imgStyle['img_height']) ? (int)$imgStyle['img_height'] : null;
+                $imgX     = isset($imgStyle['img_x']) ? (int)$imgStyle['img_x'] : 20;
+                $imgY     = isset($imgStyle['img_y']) ? (int)$imgStyle['img_y'] : 20;
+                $containerH = max(200, $imgY + ($imgH ?: 300) + 20);
+                $imgStyle_str = "position:absolute;left:{$imgX}px;top:{$imgY}px;";
+                if ($imgW) $imgStyle_str .= "width:{$imgW}px;";
+                if ($imgH) $imgStyle_str .= "height:{$imgH}px;";
+            ?>
+            <div class="section-image" style="min-height:<?php echo $containerH; ?>px;">
                 <?php if (!empty($sec['content'])): ?>
-                    <img src="<?php echo htmlspecialchars($sec['content']); ?>" alt="Image">
+                    <img src="<?php echo htmlspecialchars($sec['content']); ?>" alt="Image" style="<?php echo $imgStyle_str; ?>">
                 <?php else: ?>
                     <div class="img-placeholder">🖼️</div>
                 <?php endif; ?>

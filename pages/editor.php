@@ -24,13 +24,19 @@ $page_id = $page['id'];
 
 $sections    = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND is_archived = 0 ORDER BY position ASC");
 $totalSections = $sections ? $sections->num_rows : 0;
+
+// Build site URL for publish popup
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$base = dirname(dirname($_SERVER['PHP_SELF']));
+$siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $site_id;
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editor | <?php echo htmlspecialchars($site['site_name']); ?></title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&family=Roboto:wght@300;400;700&family=Playfair+Display:wght@400;700;900&family=Montserrat:wght@300;400;600;700;900&family=Lato:wght@300;400;700&family=Open+Sans:wght@300;400;600;700&family=Raleway:wght@300;400;600;700;900&family=Merriweather:wght@300;400;700&family=Nunito:wght@300;400;600;700;900&family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Josefin+Sans:wght@300;400;600;700&family=Bebas+Neue&family=Oswald:wght@300;400;600;700&family=Dancing+Script:wght@400;600;700&family=Pacifico&family=Lobster&family=Abril+Fatface&family=Righteous&family=Quicksand:wght@300;400;600;700&family=Exo+2:wght@300;400;600;700&family=Cinzel:wght@400;700;900&family=Comfortaa:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -38,6 +44,7 @@ $totalSections = $sections ? $sections->num_rows : 0;
             font-family: 'Segoe UI', Arial, sans-serif;
             background: #f5f6fa;
             color: #1a1a2e;
+            user-select: none;
         }
 
         .topbar {
@@ -132,105 +139,122 @@ $totalSections = $sections ? $sections->num_rows : 0;
 
         .editor-layout {
             display: grid;
-            grid-template-columns: 320px 1fr;
+            grid-template-columns: 300px 1fr;
             min-height: calc(100vh - 65px);
         }
 
+        /* ─── LEFT PANEL ─── */
         .left-panel {
             background: #fff;
             border-right: 1px solid #e9edf5;
-            padding: 24px;
+            padding: 20px;
             overflow-y: auto;
+            height: calc(100vh - 65px);
+            position: sticky;
+            top: 65px;
         }
 
         .panel-title {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 700;
             color: #9ca3af;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 16px;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
         }
 
+        /* ─── SECTION TYPE TILES (draggable) ─── */
         .section-types {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 24px;
+            gap: 8px;
+            margin-bottom: 20px;
         }
 
         .type-btn {
-            padding: 14px 10px;
-            border: 2px solid #e9edf5;
-            border-radius: 14px;
+            padding: 12px 8px;
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
             background: #fafafa;
-            cursor: pointer;
+            cursor: grab;
             text-align: center;
             transition: all 0.2s;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #374151;
+            position: relative;
         }
 
         .type-btn:hover {
             border-color: #6c3afc;
+            border-style: solid;
             background: rgba(108,58,252,0.05);
             color: #6c3afc;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108,58,252,0.15);
         }
 
-        .type-btn.active {
-            border-color: #6c3afc;
-            background: linear-gradient(135deg, rgba(108,58,252,0.1), rgba(224,64,251,0.1));
-            color: #6c3afc;
+        .type-btn.dragging-source {
+            opacity: 0.4;
+            transform: scale(0.95);
         }
 
-        .type-icon { font-size: 24px; display: block; margin-bottom: 6px; }
+        .drag-hint {
+            font-size: 9px;
+            color: #9ca3af;
+            margin-top: 3px;
+        }
+
+        .type-icon { font-size: 22px; display: block; margin-bottom: 4px; }
 
         .add-form {
             background: #f8f9ff;
-            border-radius: 16px;
-            padding: 18px;
+            border-radius: 14px;
+            padding: 16px;
             border: 1px solid #e0e7ff;
         }
 
-        .add-form-title { font-size: 15px; font-weight: 700; color: #1a1a2e; margin-bottom: 14px; }
+        .add-form-title { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 12px; }
 
-        .form-group { margin-bottom: 14px; }
+        .form-group { margin-bottom: 12px; }
 
         .form-group label {
             display: block;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             color: #6b7280;
             text-transform: uppercase;
             letter-spacing: 0.4px;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
         }
 
         .form-group input,
         .form-group textarea,
         .form-group select {
             width: 100%;
-            padding: 11px 14px;
+            padding: 10px 12px;
             border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 14px;
+            border-radius: 8px;
+            font-size: 13px;
             outline: none;
             background: #fff;
             transition: all 0.2s;
+            font-family: inherit;
         }
 
-        .form-group textarea { min-height: 100px; resize: vertical; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
 
         .form-group input:focus,
-        .form-group textarea:focus { border-color: #6c3afc; box-shadow: 0 0 0 3px rgba(108,58,252,0.1); }
+        .form-group textarea:focus,
+        .form-group select:focus { border-color: #6c3afc; box-shadow: 0 0 0 3px rgba(108,58,252,0.1); }
 
-        /* Upload drop zone */
+        /* Font preview in select */
+        select.font-select option { padding: 4px; }
+
         .upload-drop-zone {
             border: 2px dashed #c4b5fd;
-            border-radius: 14px;
-            padding: 28px 16px;
+            border-radius: 12px;
+            padding: 20px 12px;
             text-align: center;
             cursor: pointer;
             background: rgba(108,58,252,0.03);
@@ -240,17 +264,17 @@ $totalSections = $sections ? $sections->num_rows : 0;
             border-color: #6c3afc;
             background: rgba(108,58,252,0.08);
         }
-        .upload-icon { font-size: 32px; margin-bottom: 8px; }
-        .upload-text { font-size: 13px; font-weight: 600; color: #6c3afc; margin-bottom: 4px; }
-        .upload-hint { font-size: 11px; color: #9ca3af; }
+        .upload-icon { font-size: 28px; margin-bottom: 6px; }
+        .upload-text { font-size: 12px; font-weight: 600; color: #6c3afc; margin-bottom: 4px; }
+        .upload-hint { font-size: 10px; color: #9ca3af; }
 
         .add-btn {
             width: 100%;
-            padding: 13px;
+            padding: 12px;
             background: linear-gradient(135deg, #6c3afc, #e040fb);
             color: #fff;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             font-weight: 700;
             font-size: 14px;
             cursor: pointer;
@@ -260,25 +284,46 @@ $totalSections = $sections ? $sections->num_rows : 0;
 
         .add-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(108,58,252,0.35); }
 
+        /* ─── CANVAS ─── */
         .canvas-panel { padding: 28px; overflow-y: auto; }
 
         .canvas-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
-        .canvas-title { font-size: 20px; font-weight: 800; color: #1a1a2e; }
-        .section-count { font-size: 13px; color: #9ca3af; font-weight: 600; }
+        .canvas-title { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+        .section-count { font-size: 12px; color: #9ca3af; font-weight: 600; }
 
         .canvas {
             background: #fff;
             border-radius: 20px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-            overflow: hidden;
+            overflow: visible;
             min-height: 400px;
             border: 1px solid #e9edf5;
+            position: relative;
+        }
+
+        /* Drop zone indicator when dragging from panel */
+        .canvas.panel-drag-over {
+            border: 2px dashed #6c3afc;
+            background: rgba(108,58,252,0.02);
+        }
+
+        .canvas-drop-placeholder {
+            display: none;
+            padding: 20px;
+            text-align: center;
+            color: #6c3afc;
+            font-weight: 700;
+            font-size: 14px;
+            background: rgba(108,58,252,0.05);
+            border: 2px dashed #6c3afc;
+            border-radius: 12px;
+            margin: 8px;
         }
 
         .canvas-empty {
@@ -293,21 +338,203 @@ $totalSections = $sections ? $sections->num_rows : 0;
 
         .canvas-empty-icon { font-size: 64px; margin-bottom: 16px; }
         .canvas-empty h3 { font-size: 20px; font-weight: 700; color: #374151; margin-bottom: 8px; }
+        .canvas-empty p { font-size: 14px; }
 
+        /* ─── SECTION BLOCKS ─── */
         .section-block {
             border-bottom: 1px solid #f0f0f0;
             position: relative;
-            transition: all 0.2s;
+            transition: all 0.15s;
+            cursor: default;
         }
 
         .section-block:last-child { border-bottom: none; }
-        .section-block:hover { background: #fafaff; }
 
+        /* Drag handle */
+        .drag-handle {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+            color: #9ca3af;
+            font-size: 16px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.9), transparent);
+        }
+
+        .section-block:hover .drag-handle { opacity: 1; }
+
+        .section-block.dragging {
+            opacity: 0.5;
+            border: 2px dashed #6c3afc;
+        }
+
+        .section-block.drag-over-top::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: 0; right: 0;
+            height: 3px;
+            background: #6c3afc;
+            border-radius: 2px;
+            z-index: 20;
+        }
+
+        .section-block.drag-over-bottom::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0; right: 0;
+            height: 3px;
+            background: #6c3afc;
+            border-radius: 2px;
+            z-index: 20;
+        }
+
+        /* Resize handle (non-image sections) */
+        .resize-handle {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 8px;
+            cursor: ns-resize;
+            opacity: 0;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 15;
+        }
+
+        .resize-handle::after {
+            content: '⠿';
+            font-size: 12px;
+            color: #6c3afc;
+            background: rgba(108,58,252,0.1);
+            border-radius: 4px;
+            padding: 1px 6px;
+            border: 1px solid rgba(108,58,252,0.3);
+        }
+
+        .section-block:hover .resize-handle { opacity: 1; }
+        .section-block.resizing { cursor: ns-resize; }
+
+        /* ─── IMAGE RESIZER (8-handle, always freely positionable) ─── */
+        .img-resizer-wrap {
+            position: absolute;
+            display: inline-block;
+            line-height: 0;
+            cursor: move;
+            z-index: 10;
+        }
+
+        .img-resizer-wrap img { display: block; border-radius: 6px; }
+
+        /* Show handles only when selected */
+        .img-resizer-wrap .img-handle {
+            display: none;
+            position: absolute;
+            width: 10px; height: 10px;
+            background: #fff;
+            border: 2px solid #6c3afc;
+            border-radius: 2px;
+            z-index: 20;
+        }
+
+        .img-resizer-wrap.selected { outline: 2px solid #6c3afc; outline-offset: 2px; }
+        .img-resizer-wrap.selected .img-handle { display: block; }
+
+        /* 8 handle positions */
+        .img-handle.nw { top:-5px;  left:-5px;  cursor:nw-resize; }
+        .img-handle.n  { top:-5px;  left:50%; transform:translateX(-50%); cursor:n-resize; }
+        .img-handle.ne { top:-5px;  right:-5px; cursor:ne-resize; }
+        .img-handle.e  { top:50%;   right:-5px; transform:translateY(-50%); cursor:e-resize; }
+        .img-handle.se { bottom:-5px; right:-5px; cursor:se-resize; }
+        .img-handle.s  { bottom:-5px; left:50%; transform:translateX(-50%); cursor:s-resize; }
+        .img-handle.sw { bottom:-5px; left:-5px; cursor:sw-resize; }
+        .img-handle.w  { top:50%;   left:-5px;  transform:translateY(-50%); cursor:w-resize; }
+
+        /* Wrap toolbar */
+        .img-wrap-toolbar {
+            display: none;
+            position: absolute;
+            top: -112px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 10px;
+            gap: 6px;
+            z-index: 100;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            flex-direction: column;
+            min-width: 220px;
+        }
+        .img-resizer-wrap.selected .img-wrap-toolbar { display: flex; }
+
+        .wrap-toolbar-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0 2px 4px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .wrap-toolbar-row {
+            display: flex;
+            gap: 4px;
+        }
+
+        .wrap-btn {
+            background: #f8f9ff;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            transition: all 0.15s;
+            flex: 1;
+        }
+        .wrap-btn:hover { background: #eef2ff; border-color: #c4b5fd; }
+        .wrap-btn.active { background: #eef2ff; border-color: #6c3afc; }
+
+        .wrap-btn-icon {
+            width: 32px;
+            height: 24px;
+            position: relative;
+        }
+
+        .wrap-btn-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: #6b7280;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .wrap-btn.active .wrap-btn-label { color: #6c3afc; }
+
+        /* ─── SECTION RENDERINGS ─── */
         .section-hero {
             background: linear-gradient(135deg, #6c3afc 0%, #e040fb 50%, #ff6b6b 100%);
             color: #fff;
             padding: 48px 32px;
             text-align: center;
+            min-height: 120px;
         }
 
         .section-hero h2 { font-size: 36px; font-weight: 800; margin-bottom: 12px; }
@@ -320,6 +547,7 @@ $totalSections = $sections ? $sections->num_rows : 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            min-height: 60px;
         }
 
         .section-header-block span { font-size: 22px; font-weight: 800; }
@@ -330,12 +558,13 @@ $totalSections = $sections ? $sections->num_rows : 0;
             text-align: center;
             color: #6b7280;
             font-size: 14px;
+            min-height: 60px;
         }
 
-        .section-text-block { padding: 24px 32px; font-size: 15px; line-height: 1.7; color: #374151; }
+        .section-text-block { padding: 24px 32px; font-size: 15px; line-height: 1.7; color: #374151; min-height: 60px; }
 
-        .section-image-block { padding: 20px 32px; }
-        .section-image-block img { max-width: 100%; border-radius: 12px; }
+        .section-image-block { padding: 20px 32px; min-height: 200px; position: relative; overflow: visible; }
+        .section-image-block img { max-width: 100%; border-radius: 12px; display: block; }
         .section-image-block .img-placeholder {
             background: linear-gradient(135deg, #f3f4f6, #e9edf5);
             height: 160px;
@@ -349,24 +578,29 @@ $totalSections = $sections ? $sections->num_rows : 0;
 
         .section-controls {
             position: absolute;
-            right: 16px;
+            right: 10px;
             top: 50%;
             transform: translateY(-50%);
             display: flex;
-            gap: 6px;
+            gap: 5px;
             opacity: 0;
             transition: opacity 0.2s;
+            z-index: 10;
+            background: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            padding: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .section-block:hover .section-controls { opacity: 1; }
 
         .ctrl-btn {
-            width: 32px; height: 32px;
-            border-radius: 8px;
+            width: 30px; height: 30px;
+            border-radius: 7px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: 12px;
             text-decoration: none;
             transition: all 0.2s;
             border: none;
@@ -377,9 +611,9 @@ $totalSections = $sections ? $sections->num_rows : 0;
         .ctrl-down { background: #eef2ff; color: #4f46e5; }
         .ctrl-edit { background: #dcfce7; color: #15803d; }
         .ctrl-delete { background: #fee2e2; color: #b91c1c; }
-        .ctrl-btn:hover { transform: scale(1.1); }
+        .ctrl-btn:hover { transform: scale(1.12); }
 
-        /* Modal */
+        /* ─── MODALS ─── */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -437,11 +671,46 @@ $totalSections = $sections ? $sections->num_rows : 0;
             border: none; border-radius: 12px;
             font-weight: 700; font-size: 15px; cursor: pointer;
         }
+
+        /* Publish URL box */
+        .publish-url-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8f9ff;
+            border: 2px solid #e0e7ff;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+        }
+
+        .publish-url-text {
+            flex: 1;
+            font-size: 14px;
+            color: #374151;
+            word-break: break-all;
+            font-family: monospace;
+        }
+
+        .copy-btn {
+            padding: 8px 14px;
+            background: #6c3afc;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover { background: #5b2de0; }
+        .copy-btn.copied { background: #10b981; }
     </style>
 </head>
 <body>
 
-<!-- Topbar -->
 <header class="topbar">
     <div class="topbar-left">
         <a href="dashboard.php" class="back-btn">← Back</a>
@@ -452,214 +721,279 @@ $totalSections = $sections ? $sections->num_rows : 0;
         <a href="logs.php" class="settings-btn">📊 Logs</a>
         <button onclick="openSettings()" class="settings-btn">⚙️ Settings</button>
         <a href="view.php?site_id=<?php echo $site_id; ?>&preview=1" class="preview-btn" target="_blank">👁️ Preview</a>
-        <a href="../actions/publish.php?site_id=<?php echo $site_id; ?>" class="preview-btn">🚀 Publish</a>
+        <button onclick="doPublish()" class="preview-btn" style="border:none;cursor:pointer;">🚀 Publish</button>
         <div class="topbar-avatar"><?php echo strtoupper($username[0]); ?></div>
     </div>
 </header>
 
-<!-- Editor Layout -->
 <div class="editor-layout">
 
     <!-- Left Panel -->
     <div class="left-panel">
-        <div class="panel-title">Add Section</div>
+        <div class="panel-title">Drag to Canvas or Click to Select</div>
 
         <div class="section-types">
-            <button class="type-btn active" onclick="selectType('text', this)">
+            <div class="type-btn" draggable="true" data-type="text" onclick="selectType('text', this)">
                 <span class="type-icon">📝</span>Text
-            </button>
-            <button class="type-btn" onclick="selectType('image', this)">
+                <div class="drag-hint">drag or click</div>
+            </div>
+            <div class="type-btn" draggable="true" data-type="image" onclick="selectType('image', this)">
                 <span class="type-icon">🖼️</span>Image
-            </button>
-            <button class="type-btn" onclick="selectType('hero', this)">
+                <div class="drag-hint">drag or click</div>
+            </div>
+            <div class="type-btn" draggable="true" data-type="hero" onclick="selectType('hero', this)">
                 <span class="type-icon">🚀</span>Hero
-            </button>
-            <button class="type-btn" onclick="selectType('header', this)">
+                <div class="drag-hint">drag or click</div>
+            </div>
+            <div class="type-btn" draggable="true" data-type="header" onclick="selectType('header', this)">
                 <span class="type-icon">🔝</span>Header
-            </button>
-            <button class="type-btn" onclick="selectType('footer', this)">
+                <div class="drag-hint">drag or click</div>
+            </div>
+            <div class="type-btn" draggable="true" data-type="footer" onclick="selectType('footer', this)">
                 <span class="type-icon">🔚</span>Footer
-            </button>
-            <button class="type-btn" onclick="selectType('divider', this)">
+                <div class="drag-hint">drag or click</div>
+            </div>
+            <div class="type-btn" draggable="true" data-type="divider" onclick="selectType('divider', this)">
                 <span class="type-icon">➖</span>Divider
-            </button>
-        </div>
-
-       <div class="add-form">
-    <div class="add-form-title" id="formTitle">📝 Add Text Section</div>
-    <form action="../actions/save_section.php?site_id=<?php echo $site_id; ?>" method="POST" enctype="multipart/form-data" id="sectionForm">
-        <input type="hidden" name="page_id" value="<?php echo $page_id; ?>">
-        <input type="hidden" name="site_id" value="<?php echo $site_id; ?>">
-        <input type="hidden" name="type" id="sectionType" value="text">
-
-        <div class="form-group" id="contentGroup">
-            <label id="contentLabel">Text Content</label>
-            <textarea name="content" id="contentInput" placeholder="Enter your text content here..."></textarea>
-        </div>
-
-        <!-- Image upload group (shown only for image type) -->
-        <div class="form-group" id="uploadGroup" style="display:none;">
-            <label>Upload Photo</label>
-            <div class="upload-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                <div class="upload-icon">📁</div>
-                <div class="upload-text">Click to browse or drag & drop</div>
-                <div class="upload-hint">JPG, PNG, GIF, WEBP</div>
-            </div>
-            <input type="file" name="image_file" id="fileInput" accept="image/*" style="display:none;">
-            <img id="imagePreview" src="" alt="Preview" style="display:none; max-width:100%; border-radius:10px; margin-top:10px;">
-        </div>
-
-        <!-- Header-specific color pickers (shown only for header type) -->
-        <div id="headerColorOptions" style="display:none;">
-            <div class="form-group">
-                <label>Background Color</label>
-                <input type="color" name="header_bg" id="headerBgInput" value="#1a1a2e" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;padding:4px;">
-            </div>
-            <div class="form-group">
-                <label>Text Color</label>
-                <input type="color" name="header_color" id="headerColorInput" value="#ffffff" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;padding:4px;">
+                <div class="drag-hint">drag or click</div>
             </div>
         </div>
 
-        <!-- Text styling options (hidden for image type) -->
-        <div id="textStyleOptions">
-            <div class="form-group" id="styleGroup">
-                <label>Text Align</label>
-                <select name="text_align">
-                    <option value="left">Left</option>
-                    <option value="center">Center</option>
-                    <option value="right">Right</option>
-                </select>
-            </div>
+        <div class="add-form">
+            <div class="add-form-title" id="formTitle">📝 Add Text Section</div>
+            <form action="../actions/save_section.php?site_id=<?php echo $site_id; ?>" method="POST" enctype="multipart/form-data" id="sectionForm">
+                <input type="hidden" name="page_id" value="<?php echo $page_id; ?>">
+                <input type="hidden" name="site_id" value="<?php echo $site_id; ?>">
+                <input type="hidden" name="type" id="sectionType" value="text">
 
-            <div class="form-group">
-                <label>Font Size</label>
-                <input type="number" name="font_size" placeholder="e.g. 24">
-            </div>
+                <div class="form-group" id="contentGroup">
+                    <label id="contentLabel">Text Content</label>
+                    <textarea name="content" id="contentInput" placeholder="Enter your text content here..."></textarea>
+                </div>
 
-            <div class="form-group">
-                <label>Text Color</label>
-                <input type="color" name="color">
-            </div>
+                <div class="form-group" id="uploadGroup" style="display:none;">
+                    <label>Upload Photo</label>
+                    <div class="upload-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">Click to browse or drag & drop</div>
+                        <div class="upload-hint">JPG, PNG, GIF, WEBP</div>
+                    </div>
+                    <input type="file" name="image_file" id="fileInput" accept="image/*" style="display:none;">
+                    <img id="imagePreview" src="" alt="Preview" style="display:none; max-width:100%; border-radius:10px; margin-top:10px;">
+                </div>
 
-            <div class="form-group">
-                <label>Font Weight</label>
-                <select name="font_weight">
-                    <option value="normal">Normal</option>
-                    <option value="bold">Bold</option>
-                </select>
-            </div>
+                <div id="headerColorOptions" style="display:none;">
+                    <div class="form-group">
+                        <label>Background Color</label>
+                        <input type="color" name="header_bg" id="headerBgInput" value="#1a1a2e" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;padding:4px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Text Color</label>
+                        <input type="color" name="header_color" id="headerColorInput" value="#ffffff" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;padding:4px;">
+                    </div>
+                </div>
 
-            <div class="form-group">
-                <label>Font Family</label>
-                <select name="font_family">
-                    <option value="Arial, sans-serif">Arial</option>
-                    <option value="Segoe UI, sans-serif">Segoe UI</option>
-                    <option value="Georgia, serif">Georgia</option>
-                    <option value="Times New Roman, serif">Times New Roman</option>
-                    <option value="Courier New, monospace">Courier New</option>
-                    <option value="Poppins, sans-serif">Poppins</option>
-                    <option value="Roboto, sans-serif">Roboto</option>
-                </select>
-            </div>
+                <div id="textStyleOptions">
+                    <div class="form-group">
+                        <label>Text Align</label>
+                        <select name="text_align">
+                            <option value="left">Left</option>
+                            <option value="center">Center</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Font Size (px)</label>
+                        <input type="number" name="font_size" placeholder="e.g. 24" min="8" max="120">
+                    </div>
+                    <div class="form-group">
+                        <label>Text Color</label>
+                        <input type="color" name="color">
+                    </div>
+                    <div class="form-group">
+                        <label>Font Weight</label>
+                        <select name="font_weight">
+                            <option value="300">Light (300)</option>
+                            <option value="normal" selected>Normal (400)</option>
+                            <option value="600">Semi-Bold (600)</option>
+                            <option value="bold">Bold (700)</option>
+                            <option value="900">Black (900)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Font Family</label>
+                        <select name="font_family" class="font-select" id="fontFamilySelect">
+                            <optgroup label="Sans-Serif">
+                                <option value="Arial, sans-serif">Arial</option>
+                                <option value="'Segoe UI', sans-serif">Segoe UI</option>
+                                <option value="'Inter', sans-serif">Inter</option>
+                                <option value="'Poppins', sans-serif">Poppins</option>
+                                <option value="'Roboto', sans-serif">Roboto</option>
+                                <option value="'Montserrat', sans-serif">Montserrat</option>
+                                <option value="'Lato', sans-serif">Lato</option>
+                                <option value="'Open Sans', sans-serif">Open Sans</option>
+                                <option value="'Raleway', sans-serif">Raleway</option>
+                                <option value="'Nunito', sans-serif">Nunito</option>
+                                <option value="'DM Sans', sans-serif">DM Sans</option>
+                                <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
+                                <option value="'Josefin Sans', sans-serif">Josefin Sans</option>
+                                <option value="'Quicksand', sans-serif">Quicksand</option>
+                                <option value="'Exo 2', sans-serif">Exo 2</option>
+                                <option value="'Comfortaa', sans-serif">Comfortaa</option>
+                            </optgroup>
+                            <optgroup label="Display / Bold">
+                                <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                                <option value="'Oswald', sans-serif">Oswald</option>
+                                <option value="'Abril Fatface', cursive">Abril Fatface</option>
+                                <option value="'Righteous', cursive">Righteous</option>
+                                <option value="'Orbitron', sans-serif">Orbitron</option>
+                            </optgroup>
+                            <optgroup label="Serif">
+                                <option value="'Playfair Display', serif">Playfair Display</option>
+                                <option value="'Merriweather', serif">Merriweather</option>
+                                <option value="Georgia, serif">Georgia</option>
+                                <option value="'Times New Roman', serif">Times New Roman</option>
+                                <option value="'Cinzel', serif">Cinzel</option>
+                            </optgroup>
+                            <optgroup label="Script / Handwriting">
+                                <option value="'Dancing Script', cursive">Dancing Script</option>
+                                <option value="'Pacifico', cursive">Pacifico</option>
+                                <option value="'Lobster', cursive">Lobster</option>
+                            </optgroup>
+                            <optgroup label="Monospace">
+                                <option value="'Courier New', monospace">Courier New</option>
+                                <option value="'Roboto Mono', monospace">Roboto Mono</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="add-btn">+ Add Section</button>
+            </form>
         </div>
-
-        <button type="submit" class="add-btn">+ Add Section</button>
-    </form>
-</div>
-</div><!-- end left-panel -->
+    </div>
 
     <!-- Canvas -->
     <div class="canvas-panel">
         <div class="canvas-header">
             <div class="canvas-title">Page Canvas</div>
-            <div class="section-count"><?php echo $totalSections; ?> section<?php echo $totalSections !== 1 ? 's' : ''; ?></div>
+            <div class="section-count" id="sectionCountBadge"><?php echo $totalSections; ?> section<?php echo $totalSections !== 1 ? 's' : ''; ?></div>
         </div>
 
-        <div class="canvas">
+        <div class="canvas" id="canvas">
+            <div class="canvas-drop-placeholder" id="canvasDropPlaceholder">
+                ✨ Drop here to add section
+            </div>
+
             <?php
             $sections = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND is_archived = 0 ORDER BY position ASC");
             ?>
 
             <?php if ($sections && $sections->num_rows > 0): ?>
                 <?php while ($sec = $sections->fetch_assoc()): ?>
-                <div class="section-block">
+                <div class="section-block" data-id="<?php echo $sec['id']; ?>" draggable="true">
+
+                    <div class="drag-handle" title="Drag to reorder">⠿</div>
 
                     <?php if ($sec['type'] === 'hero'): ?>
-                        <div class="section-hero">
+                        <div class="section-hero" style="min-height:<?php echo !empty($sec['height']) ? $sec['height'].'px' : ''; ?>">
                             <h2><?php echo htmlspecialchars($sec['content']); ?></h2>
                             <p>Your hero section</p>
                         </div>
 
-                    
-    <?php elseif ($sec['type'] === 'header'): ?>
-<?php $style = json_decode($sec['style'] ?? '{}', true); ?>
+                    <?php elseif ($sec['type'] === 'header'): ?>
+                        <?php $style = json_decode($sec['style'] ?? '{}', true); ?>
+                        <div class="section-header-block live-header"
+                             style="background: <?php echo $style['bg'] ?? '#1a1a2e'; ?>;
+                                    color: <?php echo $style['color'] ?? '#ffffff'; ?>;
+                                    text-align: <?php echo $style['text_align'] ?? 'left'; ?>;
+                                    font-size: <?php echo $style['font_size'] ?? '24px'; ?>;
+                                    font-weight: <?php echo $style['font_weight'] ?? 'bold'; ?>;
+                                    font-family: <?php echo $style['font_family'] ?? 'Arial, sans-serif'; ?>;
+                                    min-height:<?php echo !empty($sec['height']) ? $sec['height'].'px' : ''; ?>">
+                            <span><?php echo htmlspecialchars($sec['content']); ?></span>
+                            <span style="font-size:14px; opacity:0.7;">Navigation</span>
+                        </div>
 
-<div class="section-header-wrapper" data-id="<?php echo $sec['id']; ?>">
-    <div class="section-header-block live-header"
-         style="background: <?php echo $style['bg'] ?? '#1a1a2e'; ?>;
-                color: <?php echo $style['color'] ?? '#ffffff'; ?>;
-                text-align: <?php echo $style['text_align'] ?? 'left'; ?>;
-                font-size: <?php echo $style['font_size'] ?? '24px'; ?>;
-                font-weight: <?php echo $style['font_weight'] ?? 'bold'; ?>;
-                font-family: <?php echo $style['font_family'] ?? 'Arial, sans-serif'; ?>;">
-        <span><?php echo htmlspecialchars($sec['content']); ?></span>
-        <span style="font-size:14px; opacity:0.7; font-size:14px;">Navigation</span>
-    </div>
-</div>
                     <?php elseif ($sec['type'] === 'footer'): ?>
-                        <div class="section-footer-block">
+                        <div class="section-footer-block" style="min-height:<?php echo !empty($sec['height']) ? $sec['height'].'px' : ''; ?>">
                             <?php echo htmlspecialchars($sec['content']); ?>
                         </div>
 
                     <?php elseif ($sec['type'] === 'image'): ?>
+                        <?php
+                            $imgStyle = json_decode($sec['style'] ?? '{}', true) ?: [];
+                            $imgW    = !empty($imgStyle['img_width'])  ? (int)$imgStyle['img_width']  : null;
+                            $imgH    = !empty($imgStyle['img_height']) ? (int)$imgStyle['img_height'] : null;
+                            $imgX    = isset($imgStyle['img_x']) ? (int)$imgStyle['img_x'] : 20;
+                            $imgY    = isset($imgStyle['img_y']) ? (int)$imgStyle['img_y'] : 20;
+                            $wrapStyle = "left:{$imgX}px;top:{$imgY}px;";
+                            if ($imgW) $wrapStyle .= "width:{$imgW}px;";
+                            $imgInline = '';
+                            if ($imgW) $imgInline .= "width:{$imgW}px;";
+                            if ($imgH) $imgInline .= "height:{$imgH}px;";
+                        ?>
                         <div class="section-image-block">
                             <?php if (!empty($sec['content'])): ?>
-                                <img src="<?php echo htmlspecialchars($sec['content']); ?>" alt="Image">
+                            <div class="img-resizer-wrap"
+                                 data-sec-id="<?php echo $sec['id']; ?>"
+                                 data-img-x="<?php echo $imgX; ?>"
+                                 data-img-y="<?php echo $imgY; ?>"
+                                 style="<?php echo $wrapStyle; ?>">
+                                <!-- 8 resize handles -->
+                                <div class="img-handle nw"></div>
+                                <div class="img-handle n"></div>
+                                <div class="img-handle ne"></div>
+                                <div class="img-handle e"></div>
+                                <div class="img-handle se"></div>
+                                <div class="img-handle s"></div>
+                                <div class="img-handle sw"></div>
+                                <div class="img-handle w"></div>
+                                <img src="<?php echo htmlspecialchars($sec['content']); ?>" alt="Image"
+                                     style="<?php echo $imgInline; ?>max-width:100%;">
+                            </div>
                             <?php else: ?>
                                 <div class="img-placeholder">🖼️</div>
                             <?php endif; ?>
                         </div>
 
                     <?php elseif ($sec['type'] === 'divider'): ?>
-    <div style="padding: 16px 32px;">
-        <hr style="border:none; border-top:3px solid; border-image:linear-gradient(135deg,#6c3afc,#e040fb) 1;">
-    </div>
+                        <div style="padding: 16px 32px; min-height:<?php echo !empty($sec['height']) ? $sec['height'].'px' : '50px'; ?>; display:flex; align-items:center;">
+                            <hr style="flex:1; border:none; border-top:3px solid; border-image:linear-gradient(135deg,#6c3afc,#e040fb) 1;">
+                        </div>
 
-<?php elseif ($sec['type'] === 'text'): ?>
-<?php $style = json_decode($sec['style'] ?? '{}', true); ?>
-
-<div class="section-text-block"
-     style="
-        text-align: <?php echo $style['text_align'] ?? 'left'; ?>;
-        font-size: <?php echo $style['font_size'] ?? '16px'; ?>;
-        color: <?php echo $style['color'] ?? '#000'; ?>;
-        font-weight: <?php echo $style['font_weight'] ?? 'normal'; ?>;
-        font-family: <?php echo $style['font_family'] ?? 'Arial, sans-serif'; ?>;
-     ">
-
-    <?php echo nl2br(htmlspecialchars($sec['content'])); ?>
-
-</div>
+                    <?php elseif ($sec['type'] === 'text'): ?>
+                        <?php $style = json_decode($sec['style'] ?? '{}', true); ?>
+                        <div class="section-text-block"
+                             style="text-align: <?php echo $style['text_align'] ?? 'left'; ?>;
+                                    font-size: <?php echo $style['font_size'] ?? '16px'; ?>;
+                                    color: <?php echo $style['color'] ?? '#000'; ?>;
+                                    font-weight: <?php echo $style['font_weight'] ?? 'normal'; ?>;
+                                    font-family: <?php echo $style['font_family'] ?? 'Arial, sans-serif'; ?>;
+                                    min-height:<?php echo !empty($sec['height']) ? $sec['height'].'px' : ''; ?>">
+                            <?php echo nl2br(htmlspecialchars($sec['content'])); ?>
+                        </div>
                     <?php endif; ?>
+
+                    <div class="resize-handle" data-id="<?php echo $sec['id']; ?>" title="Drag to resize"></div>
 
                     <!-- Controls -->
                     <div class="section-controls">
-                        <a href="../actions/move.php?id=<?php echo $sec['id']; ?>&dir=up&site_id=<?php echo $site_id; ?>" class="ctrl-btn ctrl-up">⬆️</a>
-                        <a href="../actions/move.php?id=<?php echo $sec['id']; ?>&dir=down&site_id=<?php echo $site_id; ?>" class="ctrl-btn ctrl-down">⬇️</a>
-                        <button onclick="openEditModal(<?php echo $sec['id']; ?>, '<?php echo addslashes(htmlspecialchars($sec['content'])); ?>', '<?php echo $sec['type']; ?>', <?php echo htmlspecialchars($sec['style'] ?? '{}'); ?>)" class="ctrl-btn ctrl-edit">✏️</button>
+                        <button onclick="moveSection(<?php echo $sec['id']; ?>, 'up', this)" class="ctrl-btn ctrl-up" title="Move Up">⬆️</button>
+                        <button onclick="moveSection(<?php echo $sec['id']; ?>, 'down', this)" class="ctrl-btn ctrl-down" title="Move Down">⬇️</button>
+                        <button onclick="openEditModal(<?php echo $sec['id']; ?>, '<?php echo addslashes(htmlspecialchars($sec['content'])); ?>', '<?php echo $sec['type']; ?>', <?php echo htmlspecialchars($sec['style'] ?? '{}'); ?>)" class="ctrl-btn ctrl-edit" title="Edit">✏️</button>
                         <a href="../actions/archive.php?id=<?php echo $sec['id']; ?>&site_id=<?php echo $site_id; ?>"
                            class="ctrl-btn ctrl-delete"
-                           onclick="return confirm('Remove this section?');">🗑️</a>
+                           onclick="return confirm('Remove this section?');" title="Delete">🗑️</a>
                     </div>
                 </div>
                 <?php endwhile; ?>
 
             <?php else: ?>
-                <div class="canvas-empty">
+                <div class="canvas-empty" id="canvasEmpty">
                     <div class="canvas-empty-icon">🎨</div>
                     <h3>Your canvas is empty!</h3>
-                    <p>Add sections from the left panel to start building</p>
+                    <p>Drag sections from the left panel or click to select type, then click Add Section</p>
                 </div>
             <?php endif; ?>
         </div>
@@ -668,59 +1002,115 @@ $totalSections = $sections ? $sections->num_rows : 0;
 
 <!-- Edit Section Modal -->
 <div class="modal-overlay" id="editModal">
-    <div class="modal" style="max-width:560px; max-height:90vh; overflow-y:auto;">
+    <div class="modal" style="max-width:580px; max-height:90vh; overflow-y:auto;">
         <div class="modal-title">✏️ Edit Section</div>
         <div class="modal-sub" id="editModalSub">Update your section content</div>
-        <form action="../actions/edit_section.php" method="POST">
+        <form action="../actions/edit_section.php" method="POST" enctype="multipart/form-data" id="editForm">
             <input type="hidden" name="id" id="editSectionId">
             <input type="hidden" name="site_id" value="<?php echo $site_id; ?>">
             <input type="hidden" name="section_type" id="editSectionType">
 
-            <!-- Content field -->
-            <div style="margin-bottom:14px;">
-                <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;" id="editContentLabel">Content</label>
+            <!-- Text/Hero/Footer/Divider content -->
+            <div id="editContentGroup" style="margin-bottom:14px;">
+                <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;" id="editContentLabel">Content</label>
                 <textarea name="content" id="editSectionContent" style="width:100%;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;min-height:90px;resize:vertical;outline:none;font-family:inherit;"></textarea>
             </div>
 
-            <!-- Text style fields (shown for text, hero, footer, divider) -->
+            <!-- Image edit fields -->
+            <div id="editImageGroup" style="display:none; margin-bottom:14px;">
+                <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Current Image</label>
+                <img id="editImagePreview" src="" alt="Current image" style="max-width:100%;border-radius:10px;margin-bottom:12px;display:none;">
+                <div id="editImgPlaceholder" style="background:#f3f4f6;border-radius:10px;height:80px;display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:12px;">🖼️</div>
+
+                <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Replace with New Photo</label>
+                <div class="upload-drop-zone" id="editDropZone" onclick="document.getElementById('editFileInput').click()" style="border:2px dashed #c4b5fd;border-radius:12px;padding:20px 12px;text-align:center;cursor:pointer;background:rgba(108,58,252,0.03);">
+                    <div style="font-size:28px;margin-bottom:6px;" id="editUploadIcon">📁</div>
+                    <div style="font-size:12px;font-weight:600;color:#6c3afc;margin-bottom:4px;" id="editUploadText">Click to browse or drag & drop</div>
+                    <div style="font-size:10px;color:#9ca3af;">JPG, PNG, GIF, WEBP</div>
+                </div>
+                <input type="file" name="image_file" id="editFileInput" accept="image/*" style="display:none;">
+                <img id="editNewImagePreview" src="" alt="New preview" style="display:none;max-width:100%;border-radius:10px;margin-top:10px;">
+
+                <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-top:12px;margin-bottom:6px;">Or use Image URL</label>
+                <input type="text" name="content" id="editImageUrl" placeholder="https://example.com/image.jpg" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+            </div>
+
+            <!-- Text style fields -->
             <div id="editTextStyles">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
                     <div>
-                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Align</label>
-                        <select name="text_align" id="editTextAlign" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Align</label>
+                        <select name="text_align" id="editTextAlign" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
                             <option value="left">Left</option>
                             <option value="center">Center</option>
                             <option value="right">Right</option>
                         </select>
                     </div>
                     <div>
-                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Size (px)</label>
-                        <input type="number" name="font_size" id="editFontSize" placeholder="e.g. 16" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Size (px)</label>
+                        <input type="number" name="font_size" id="editFontSize" placeholder="e.g. 16" min="8" max="120" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
                     <div>
-                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Color</label>
-                        <input type="color" name="color" id="editColor" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;padding:4px;">
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Color</label>
+                        <input type="color" name="color" id="editColor" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;padding:3px;">
                     </div>
                     <div>
-                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Weight</label>
-                        <select name="font_weight" id="editFontWeight" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-                            <option value="normal">Normal</option>
-                            <option value="bold">Bold</option>
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Weight</label>
+                        <select name="font_weight" id="editFontWeight" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+                            <option value="300">Light (300)</option>
+                            <option value="normal">Normal (400)</option>
+                            <option value="600">Semi-Bold (600)</option>
+                            <option value="bold">Bold (700)</option>
+                            <option value="900">Black (900)</option>
                         </select>
                     </div>
                 </div>
                 <div style="margin-bottom:14px;">
-                    <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Family</label>
-                    <select name="font_family" id="editFontFamily" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-                        <option value="Arial, sans-serif">Arial</option>
-                        <option value="Segoe UI, sans-serif">Segoe UI</option>
-                        <option value="Georgia, serif">Georgia</option>
-                        <option value="Times New Roman, serif">Times New Roman</option>
-                        <option value="Courier New, monospace">Courier New</option>
-                        <option value="Poppins, sans-serif">Poppins</option>
-                        <option value="Roboto, sans-serif">Roboto</option>
+                    <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Family</label>
+                    <select name="font_family" id="editFontFamily" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+                        <optgroup label="Sans-Serif">
+                            <option value="Arial, sans-serif">Arial</option>
+                            <option value="'Segoe UI', sans-serif">Segoe UI</option>
+                            <option value="'Inter', sans-serif">Inter</option>
+                            <option value="'Poppins', sans-serif">Poppins</option>
+                            <option value="'Roboto', sans-serif">Roboto</option>
+                            <option value="'Montserrat', sans-serif">Montserrat</option>
+                            <option value="'Lato', sans-serif">Lato</option>
+                            <option value="'Open Sans', sans-serif">Open Sans</option>
+                            <option value="'Raleway', sans-serif">Raleway</option>
+                            <option value="'Nunito', sans-serif">Nunito</option>
+                            <option value="'DM Sans', sans-serif">DM Sans</option>
+                            <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
+                            <option value="'Josefin Sans', sans-serif">Josefin Sans</option>
+                            <option value="'Quicksand', sans-serif">Quicksand</option>
+                            <option value="'Exo 2', sans-serif">Exo 2</option>
+                            <option value="'Comfortaa', sans-serif">Comfortaa</option>
+                        </optgroup>
+                        <optgroup label="Display / Bold">
+                            <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                            <option value="'Oswald', sans-serif">Oswald</option>
+                            <option value="'Abril Fatface', cursive">Abril Fatface</option>
+                            <option value="'Righteous', cursive">Righteous</option>
+                            <option value="'Orbitron', sans-serif">Orbitron</option>
+                        </optgroup>
+                        <optgroup label="Serif">
+                            <option value="'Playfair Display', serif">Playfair Display</option>
+                            <option value="'Merriweather', serif">Merriweather</option>
+                            <option value="Georgia, serif">Georgia</option>
+                            <option value="'Times New Roman', serif">Times New Roman</option>
+                            <option value="'Cinzel', serif">Cinzel</option>
+                        </optgroup>
+                        <optgroup label="Script / Handwriting">
+                            <option value="'Dancing Script', cursive">Dancing Script</option>
+                            <option value="'Pacifico', cursive">Pacifico</option>
+                            <option value="'Lobster', cursive">Lobster</option>
+                        </optgroup>
+                        <optgroup label="Monospace">
+                            <option value="'Courier New', monospace">Courier New</option>
+                            <option value="'Roboto Mono', monospace">Roboto Mono</option>
+                        </optgroup>
                     </select>
                 </div>
             </div>
@@ -729,46 +1119,56 @@ $totalSections = $sections ? $sections->num_rows : 0;
             <div id="editHeaderStyles" style="display:none;">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
                     <div>
-                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Background Color</label>
-                        <input type="color" name="bg_color" id="editBgColor" value="#1a1a2e" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;padding:4px;">
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Background Color</label>
+                        <input type="color" name="bg_color" id="editBgColor" value="#1a1a2e" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;padding:3px;">
                     </div>
                     <div>
-                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Color</label>
-                        <input type="color" name="text_color" id="editHeaderTextColor" value="#ffffff" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;padding:4px;">
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Color</label>
+                        <input type="color" name="text_color" id="editHeaderTextColor" value="#ffffff" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;padding:3px;">
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
                     <div>
-                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Align</label>
-                        <select name="text_align" id="editHeaderAlign" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Align</label>
+                        <select name="text_align" id="editHeaderAlign" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
                             <option value="left">Left</option>
                             <option value="center">Center</option>
                             <option value="right">Right</option>
                         </select>
                     </div>
                     <div>
-                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Size (px)</label>
-                        <input type="number" name="font_size" id="editHeaderFontSize" placeholder="e.g. 24" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Size (px)</label>
+                        <input type="number" name="font_size" id="editHeaderFontSize" placeholder="e.g. 24" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
                     <div>
-                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Weight</label>
-                        <select name="font_weight" id="editHeaderWeight" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-                            <option value="normal">Normal</option>
-                            <option value="bold">Bold</option>
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Weight</label>
+                        <select name="font_weight" id="editHeaderWeight" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+                            <option value="300">Light (300)</option>
+                            <option value="normal">Normal (400)</option>
+                            <option value="600">Semi-Bold (600)</option>
+                            <option value="bold">Bold (700)</option>
+                            <option value="900">Black (900)</option>
                         </select>
                     </div>
                     <div>
-                        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Family</label>
-                        <select name="font_family" id="editHeaderFamily" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Family</label>
+                        <select name="font_family" id="editHeaderFamily" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
                             <option value="Arial, sans-serif">Arial</option>
-                            <option value="Segoe UI, sans-serif">Segoe UI</option>
+                            <option value="'Segoe UI', sans-serif">Segoe UI</option>
+                            <option value="'Inter', sans-serif">Inter</option>
+                            <option value="'Poppins', sans-serif">Poppins</option>
+                            <option value="'Roboto', sans-serif">Roboto</option>
+                            <option value="'Montserrat', sans-serif">Montserrat</option>
+                            <option value="'Playfair Display', serif">Playfair Display</option>
+                            <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                            <option value="'Oswald', sans-serif">Oswald</option>
+                            <option value="'Dancing Script', cursive">Dancing Script</option>
+                            <option value="'Raleway', sans-serif">Raleway</option>
+                            <option value="'Orbitron', sans-serif">Orbitron</option>
                             <option value="Georgia, serif">Georgia</option>
-                            <option value="Times New Roman, serif">Times New Roman</option>
-                            <option value="Courier New, monospace">Courier New</option>
-                            <option value="Poppins, sans-serif">Poppins</option>
-                            <option value="Roboto, sans-serif">Roboto</option>
+                            <option value="'Courier New', monospace">Courier New</option>
                         </select>
                     </div>
                 </div>
@@ -782,16 +1182,23 @@ $totalSections = $sections ? $sections->num_rows : 0;
     </div>
 </div>
 
-<!-- Publish Success Popup -->
-<div class="modal-overlay <?php echo isset($_GET['published']) ? 'active' : ''; ?>" id="publishModal">
-    <div class="modal" style="text-align:center; max-width:420px;">
+<!-- Publish Modal with URL -->
+<div class="modal-overlay" id="publishModal">
+    <div class="modal" style="text-align:center; max-width:460px;">
         <div style="font-size:64px; margin-bottom:16px;">🎉</div>
-        <div class="modal-title" style="font-size:26px;">Site Published!</div>
-        <div class="modal-sub" style="margin-bottom:24px;">
+        <div class="modal-title" style="font-size:24px;">Site Published!</div>
+        <div class="modal-sub" style="margin-bottom:20px;">
             <strong><?php echo htmlspecialchars($site['site_name']); ?></strong> is now live and visible to everyone.
         </div>
+        <div style="text-align:left; margin-bottom:8px;">
+            <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Your site URL</label>
+        </div>
+        <div class="publish-url-box">
+            <span class="publish-url-text" id="siteUrlText"><?php echo htmlspecialchars($siteUrl); ?></span>
+            <button class="copy-btn" id="copyUrlBtn" onclick="copyUrl()">📋 Copy</button>
+        </div>
         <div class="modal-btns" style="justify-content:center;">
-            <a href="view.php?site_id=<?php echo $site_id; ?>" class="modal-submit" style="text-decoration:none; text-align:center; padding:13px 24px;">👁️ View Live Site</a>
+            <a href="view.php?site_id=<?php echo $site_id; ?>" class="modal-submit" style="text-decoration:none; text-align:center; padding:13px 24px;" target="_blank">👁️ View Live Site</a>
             <button type="button" class="modal-cancel" onclick="document.getElementById('publishModal').classList.remove('active')">Close</button>
         </div>
     </div>
@@ -814,31 +1221,346 @@ $totalSections = $sections ? $sections->num_rows : 0;
 </div>
 
 <script>
+// ─── PANEL → CANVAS DRAG & DROP ───────────────────────────────────────────────
+let draggingType = null; // type from panel
+let draggingBlock = null; // block being reordered
+let dragOverBlock = null;
+
+// Type buttons draggable
+document.querySelectorAll('.type-btn[draggable]').forEach(btn => {
+    btn.addEventListener('dragstart', e => {
+        draggingType = btn.dataset.type;
+        draggingBlock = null;
+        btn.classList.add('dragging-source');
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setData('text/plain', draggingType);
+    });
+    btn.addEventListener('dragend', () => {
+        btn.classList.remove('dragging-source');
+        draggingType = null;
+    });
+});
+
+// Canvas drop zone
+const canvas = document.getElementById('canvas');
+const dropPlaceholder = document.getElementById('canvasDropPlaceholder');
+
+canvas.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (draggingType) {
+        canvas.classList.add('panel-drag-over');
+        dropPlaceholder.style.display = 'block';
+        e.dataTransfer.dropEffect = 'copy';
+    }
+});
+
+canvas.addEventListener('dragleave', e => {
+    if (!canvas.contains(e.relatedTarget)) {
+        canvas.classList.remove('panel-drag-over');
+        dropPlaceholder.style.display = 'none';
+    }
+});
+
+canvas.addEventListener('drop', e => {
+    e.preventDefault();
+    canvas.classList.remove('panel-drag-over');
+    dropPlaceholder.style.display = 'none';
+    if (draggingType) {
+        // Programmatically submit the form with that type selected
+        selectType(draggingType, document.querySelector(`.type-btn[data-type="${draggingType}"]`));
+        document.getElementById('sectionForm').submit();
+    }
+});
+
+// ─── CANVAS SECTION REORDER DRAG & DROP ───────────────────────────────────────
+function initSectionDrag() {
+    document.querySelectorAll('.section-block').forEach(block => {
+        block.addEventListener('dragstart', e => {
+            if (e.target.classList.contains('type-btn')) return;
+            draggingBlock = block;
+            draggingType = null;
+            block.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', block.dataset.id);
+        });
+
+        block.addEventListener('dragend', () => {
+            block.classList.remove('dragging');
+            document.querySelectorAll('.section-block').forEach(b => {
+                b.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+            draggingBlock = null;
+        });
+
+        block.addEventListener('dragover', e => {
+            if (!draggingBlock || draggingBlock === block) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const rect = block.getBoundingClientRect();
+            const mid = rect.top + rect.height / 2;
+            block.classList.remove('drag-over-top', 'drag-over-bottom');
+            block.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
+            dragOverBlock = block;
+        });
+
+        block.addEventListener('dragleave', () => {
+            block.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        block.addEventListener('drop', e => {
+            e.preventDefault();
+            if (!draggingBlock || draggingBlock === block) return;
+            block.classList.remove('drag-over-top', 'drag-over-bottom');
+
+            const rect = block.getBoundingClientRect();
+            const insertBefore = e.clientY < rect.top + rect.height / 2;
+
+            const parent = block.parentNode;
+            if (insertBefore) {
+                parent.insertBefore(draggingBlock, block);
+            } else {
+                parent.insertBefore(draggingBlock, block.nextSibling);
+            }
+
+            // Persist new order via AJAX
+            const ids = [...document.querySelectorAll('.section-block[data-id]')].map(b => b.dataset.id);
+            fetch('../actions/reorder_sections.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids })
+            });
+        });
+    });
+}
+
+initSectionDrag();
+
+// ─── RESIZE HANDLES (non-image sections) ─────────────────────────────────────
+document.querySelectorAll('.resize-handle').forEach(handle => {
+    let startY, startH, block, inner;
+
+    handle.addEventListener('mousedown', e => {
+        e.preventDefault();
+        block = handle.closest('.section-block');
+        inner = block.querySelector('[class*="section-"]:not(.section-controls):not(.section-block)') ||
+                block.querySelector('div:not(.drag-handle):not(.section-controls):not(.resize-handle)');
+        startY = e.clientY;
+        startH = block.offsetHeight;
+        block.classList.add('resizing');
+        document.body.style.cursor = 'ns-resize';
+        document.body.style.userSelect = 'none';
+
+        const onMove = ev => {
+            const newH = Math.max(40, startH + (ev.clientY - startY));
+            if (inner) inner.style.minHeight = newH + 'px';
+        };
+        const onUp = ev => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            block.classList.remove('resizing');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            const newH = Math.max(40, startH + (ev.clientY - startY));
+            fetch('../actions/save_height.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: handle.dataset.id, height: newH })
+            });
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    });
+});
+
+// ─── IMAGE 8-HANDLE RESIZER + FREE DRAG ──────────────────────────────────────
+function initImageResizers() {
+
+    function syncContainerHeight(wrap) {
+        const container = wrap.closest('.section-image-block');
+        const needed = wrap.offsetTop + wrap.offsetHeight + 20;
+        container.style.minHeight = Math.max(200, needed) + 'px';
+    }
+
+    document.querySelectorAll('.img-resizer-wrap').forEach(wrap => {
+        const img   = wrap.querySelector('img');
+        const secId = wrap.dataset.secId;
+        if (!img) return;
+
+        // Set initial container height once image loads
+        if (img.complete) syncContainerHeight(wrap);
+        else img.addEventListener('load', () => syncContainerHeight(wrap));
+
+        // Click to select (not on a handle)
+        wrap.addEventListener('mousedown', e => {
+            if (e.target.classList.contains('img-handle')) return;
+            e.stopPropagation();
+            document.querySelectorAll('.img-resizer-wrap.selected').forEach(w => w.classList.remove('selected'));
+            wrap.classList.add('selected');
+        });
+
+        // Prevent the parent section-block's draggable from stealing events inside the image block
+        wrap.closest('.section-image-block').addEventListener('mousedown', e => {
+            e.stopPropagation();
+        });
+
+        // ── Drag to reposition (Canva-style) ──────────────────────────────
+        img.addEventListener('mousedown', e => {
+            if (e.target.classList.contains('img-handle')) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Select on drag start too
+            document.querySelectorAll('.img-resizer-wrap.selected').forEach(w => w.classList.remove('selected'));
+            wrap.classList.add('selected');
+
+            const container = wrap.closest('.section-image-block');
+            const startX    = e.clientX;
+            const startY    = e.clientY;
+            const origLeft  = wrap.offsetLeft;
+            const origTop   = wrap.offsetTop;
+
+            document.body.style.userSelect = 'none';
+            wrap.style.cursor = 'grabbing';
+
+            const onMove = ev => {
+                const newLeft = Math.max(0, origLeft + ev.clientX - startX);
+                const newTop  = Math.max(0, origTop  + ev.clientY - startY);
+                wrap.style.left = newLeft + 'px';
+                wrap.style.top  = newTop  + 'px';
+                // Auto-expand container if image is dragged lower
+                const needed = newTop + wrap.offsetHeight + 20;
+                if (needed > container.offsetHeight) {
+                    container.style.minHeight = needed + 'px';
+                }
+            };
+
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                document.body.style.userSelect = '';
+                wrap.style.cursor = '';
+
+                const newX = wrap.offsetLeft;
+                const newY = wrap.offsetTop;
+                wrap.dataset.imgX = newX;
+                wrap.dataset.imgY = newY;
+                syncContainerHeight(wrap);
+
+                fetch('../actions/save_height.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id:     secId,
+                        height: Math.round(img.offsetHeight),
+                        width:  Math.round(img.offsetWidth),
+                        x:      newX,
+                        y:      newY,
+                        type:   'image'
+                    })
+                });
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        // ── 8-handle resize ───────────────────────────────────────────────
+        wrap.querySelectorAll('.img-handle').forEach(handle => {
+            handle.addEventListener('mousedown', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Keep selected during resize
+                wrap.classList.add('selected');
+
+                const dir    = [...handle.classList].find(c => ['nw','n','ne','e','se','s','sw','w'].includes(c));
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startW = img.offsetWidth;
+                const startH = img.offsetHeight;
+
+                document.body.style.userSelect = 'none';
+
+                const onMove = ev => {
+                    let dx = ev.clientX - startX;
+                    let dy = ev.clientY - startY;
+                    let newW = startW, newH = startH;
+
+                    if (dir === 'e' || dir === 'ne' || dir === 'se') newW = Math.max(40, startW + dx);
+                    if (dir === 'w' || dir === 'nw' || dir === 'sw') newW = Math.max(40, startW - dx);
+                    if (dir === 's' || dir === 'se' || dir === 'sw') newH = Math.max(30, startH + dy);
+                    if (dir === 'n' || dir === 'ne' || dir === 'nw') newH = Math.max(30, startH - dy);
+
+                    if (['nw','ne','se','sw'].includes(dir)) {
+                        const scale = Math.max(newW / startW, newH / startH);
+                        newW = Math.round(startW * scale);
+                        newH = Math.round(startH * scale);
+                    }
+
+                    img.style.width  = newW + 'px';
+                    img.style.height = newH + 'px';
+                    wrap.style.width = newW + 'px';
+                };
+
+                const onUp = () => {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    document.body.style.userSelect = '';
+                    syncContainerHeight(wrap);
+
+                    fetch('../actions/save_height.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id:     secId,
+                            height: Math.round(img.offsetHeight),
+                            width:  Math.round(img.offsetWidth),
+                            x:      wrap.offsetLeft,
+                            y:      wrap.offsetTop,
+                            type:   'image'
+                        })
+                    });
+                };
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        });
+    });
+
+    // Click outside deselects
+    document.addEventListener('mousedown', e => {
+        if (!e.target.closest('.img-resizer-wrap')) {
+            document.querySelectorAll('.img-resizer-wrap.selected').forEach(w => w.classList.remove('selected'));
+        }
+    });
+}
+
+initImageResizers();
+
+// ─── SELECT TYPE ──────────────────────────────────────────────────────────────
 function selectType(type, btn) {
     document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    if (btn) btn.classList.add('active');
     document.getElementById('sectionType').value = type;
 
     const labels = {
-        text:    { title: '📝 Add Text Section',   label: 'Text Content',    placeholder: 'Enter your text content here...', input: 'textarea' },
-        image:   { title: '🖼️ Add Image Section',  label: 'Image URL (optional)', placeholder: 'https://example.com/image.jpg', input: 'text' },
-        hero:    { title: '🚀 Add Hero Section',   label: 'Hero Title',      placeholder: 'Welcome to My Website!',          input: 'text' },
-        header:  { title: '🔝 Add Header Section', label: 'Brand Name',      placeholder: 'My Awesome Website',              input: 'text' },
-        footer:  { title: '🔚 Add Footer Section', label: 'Footer Text',     placeholder: '© 2026 My Website.',              input: 'text' },
-        divider: { title: '➖ Add Divider',         label: 'No content needed', placeholder: '',                              input: 'none' },
+        text:    { title: '📝 Text Section',   label: 'Text Content',        placeholder: 'Enter your text here...', input: 'textarea' },
+        image:   { title: '🖼️ Image Section',  label: 'Image URL (optional)', placeholder: 'https://example.com/image.jpg', input: 'text' },
+        hero:    { title: '🚀 Hero Section',   label: 'Hero Title',           placeholder: 'Welcome to My Website!', input: 'text' },
+        header:  { title: '🔝 Header Section', label: 'Brand Name',           placeholder: 'My Awesome Website', input: 'text' },
+        footer:  { title: '🔚 Footer Section', label: 'Footer Text',          placeholder: '© 2026 My Website.', input: 'text' },
+        divider: { title: '➖ Divider',         label: 'No content needed',    placeholder: '', input: 'none' },
     };
 
-    const cfg = labels[type];
+    const cfg = labels[type] || labels.text;
     document.getElementById('formTitle').textContent = cfg.title;
 
     const contentGroup  = document.getElementById('contentGroup');
     const uploadGroup   = document.getElementById('uploadGroup');
     const textStyleOpts = document.getElementById('textStyleOptions');
-
     const headerColorOpts = document.getElementById('headerColorOptions');
 
     if (type === 'image') {
-        // Show URL input + upload; hide text styling
         contentGroup.style.display = '';
         uploadGroup.style.display  = '';
         textStyleOpts.style.display = 'none';
@@ -850,11 +1572,9 @@ function selectType(type, btn) {
             input.type = 'text'; input.name = 'content';
             input.id = 'contentInput'; input.placeholder = cfg.placeholder;
             current.replaceWith(input);
-        } else {
-            current.placeholder = cfg.placeholder;
-        }
+        } else { current.placeholder = cfg.placeholder; }
     } else {
-        uploadGroup.style.display   = 'none';
+        uploadGroup.style.display = 'none';
         headerColorOpts.style.display = (type === 'header') ? '' : 'none';
         textStyleOpts.style.display = (type === 'hero' || type === 'divider' || type === 'footer') ? 'none' : '';
         document.getElementById('contentLabel').textContent = cfg.label;
@@ -872,16 +1592,14 @@ function selectType(type, btn) {
             } else if (cfg.input === 'textarea' && current.tagName === 'INPUT') {
                 const textarea = document.createElement('textarea');
                 textarea.name = 'content'; textarea.id = 'contentInput';
-                textarea.placeholder = cfg.placeholder; textarea.style.minHeight = '100px';
+                textarea.placeholder = cfg.placeholder;
                 current.replaceWith(textarea);
-            } else {
-                current.placeholder = cfg.placeholder;
-            }
+            } else { current.placeholder = cfg.placeholder; }
         }
     }
 }
 
-// File input preview
+// ─── FILE INPUT ───────────────────────────────────────────────────────────────
 document.getElementById('fileInput').addEventListener('change', function() {
     const file = this.files[0];
     if (!file) return;
@@ -896,7 +1614,6 @@ document.getElementById('fileInput').addEventListener('change', function() {
     reader.readAsDataURL(file);
 });
 
-// Drag and drop
 const dropZone = document.getElementById('dropZone');
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
@@ -912,34 +1629,126 @@ dropZone.addEventListener('drop', e => {
     }
 });
 
+// ─── EDIT MODAL IMAGE UPLOAD ──────────────────────────────────────────────────
+document.getElementById('editFileInput').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const preview = document.getElementById('editNewImagePreview');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        document.getElementById('editUploadText').textContent = file.name;
+        document.getElementById('editUploadIcon').textContent = '✅';
+        // Clear URL field when file is selected
+        document.getElementById('editImageUrl').value = '';
+    };
+    reader.readAsDataURL(file);
+});
+
+const editDropZone = document.getElementById('editDropZone');
+editDropZone.addEventListener('dragover', e => { e.preventDefault(); editDropZone.style.borderColor = '#6c3afc'; editDropZone.style.background = 'rgba(108,58,252,0.08)'; });
+editDropZone.addEventListener('dragleave', () => { editDropZone.style.borderColor = '#c4b5fd'; editDropZone.style.background = 'rgba(108,58,252,0.03)'; });
+editDropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    editDropZone.style.borderColor = '#c4b5fd';
+    editDropZone.style.background = 'rgba(108,58,252,0.03)';
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('editFileInput').files = dt.files;
+        document.getElementById('editFileInput').dispatchEvent(new Event('change'));
+    }
+});
+
+// ─── MOVE SECTION (AJAX) ─────────────────────────────────────────────────────
+function moveSection(id, dir, btn) {
+    const block = btn.closest('.section-block');
+    const canvas = document.getElementById('canvas');
+    const blocks = [...canvas.querySelectorAll('.section-block[data-id]')];
+    const idx = blocks.indexOf(block);
+
+    // Move in DOM immediately
+    if (dir === 'up' && idx > 0) {
+        canvas.insertBefore(block, blocks[idx - 1]);
+    } else if (dir === 'down' && idx < blocks.length - 1) {
+        canvas.insertBefore(blocks[idx + 1], block);
+    } else {
+        return; // already at edge
+    }
+
+    // Persist new order
+    const newIds = [...canvas.querySelectorAll('.section-block[data-id]')].map(b => b.dataset.id);
+    fetch('../actions/reorder_sections.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: newIds })
+    });
+}
+
+// ─── EDIT MODAL ───────────────────────────────────────────────────────────────
 function openEditModal(id, content, type, styleObj) {
     document.getElementById('editSectionId').value   = id;
-    document.getElementById('editSectionContent').value = content;
     document.getElementById('editSectionType').value = type;
 
     const textStyles   = document.getElementById('editTextStyles');
     const headerStyles = document.getElementById('editHeaderStyles');
+    const imageGroup   = document.getElementById('editImageGroup');
+    const contentGroup = document.getElementById('editContentGroup');
     const sub          = document.getElementById('editModalSub');
 
-    if (type === 'header') {
-        textStyles.style.display   = 'none';
-        headerStyles.style.display = '';
+    // Reset image upload fields
+    document.getElementById('editFileInput').value = '';
+    document.getElementById('editNewImagePreview').style.display = 'none';
+    document.getElementById('editUploadIcon').textContent = '📁';
+    document.getElementById('editUploadText').textContent = 'Click to browse or drag & drop';
+
+    if (type === 'image') {
+        contentGroup.style.display   = 'none';
+        imageGroup.style.display     = '';
+        textStyles.style.display     = 'none';
+        headerStyles.style.display   = 'none';
+        sub.textContent = 'Change or replace the image';
+
+        // Show current image
+        const urlInput = document.getElementById('editImageUrl');
+        urlInput.value = content || '';
+        const preview = document.getElementById('editImagePreview');
+        const placeholder = document.getElementById('editImgPlaceholder');
+        if (content) {
+            preview.src = content;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+        } else {
+            preview.style.display = 'none';
+            placeholder.style.display = 'flex';
+        }
+    } else if (type === 'header') {
+        contentGroup.style.display   = '';
+        imageGroup.style.display     = 'none';
+        textStyles.style.display     = 'none';
+        headerStyles.style.display   = '';
         sub.textContent = 'Edit header brand name and styles';
-        document.getElementById('editBgColor').value          = styleObj.bg          || '#1a1a2e';
-        document.getElementById('editHeaderTextColor').value  = styleObj.color        || '#ffffff';
-        document.getElementById('editHeaderAlign').value      = styleObj.text_align   || 'left';
-        document.getElementById('editHeaderFontSize').value   = parseInt(styleObj.font_size) || 24;
-        document.getElementById('editHeaderWeight').value     = styleObj.font_weight  || 'bold';
+        document.getElementById('editSectionContent').value = content;
+        document.getElementById('editBgColor').value         = styleObj.bg         || '#1a1a2e';
+        document.getElementById('editHeaderTextColor').value = styleObj.color       || '#ffffff';
+        document.getElementById('editHeaderAlign').value     = styleObj.text_align  || 'left';
+        document.getElementById('editHeaderFontSize').value  = parseInt(styleObj.font_size) || 24;
+        document.getElementById('editHeaderWeight').value    = styleObj.font_weight || 'bold';
         setSelectValue('editHeaderFamily', styleObj.font_family || 'Arial, sans-serif');
     } else {
-        textStyles.style.display   = (type === 'divider' || type === 'hero') ? 'none' : '';
-        headerStyles.style.display = 'none';
+        contentGroup.style.display   = '';
+        imageGroup.style.display     = 'none';
+        textStyles.style.display     = (type === 'divider' || type === 'hero') ? 'none' : '';
+        headerStyles.style.display   = 'none';
         sub.textContent = 'Update your section content and styles';
+        document.getElementById('editSectionContent').value = content;
         if (styleObj) {
-            document.getElementById('editTextAlign').value   = styleObj.text_align  || 'left';
-            document.getElementById('editFontSize').value    = parseInt(styleObj.font_size) || 16;
-            document.getElementById('editColor').value       = styleObj.color        || '#000000';
-            document.getElementById('editFontWeight').value  = styleObj.font_weight  || 'normal';
+            document.getElementById('editTextAlign').value  = styleObj.text_align  || 'left';
+            document.getElementById('editFontSize').value   = parseInt(styleObj.font_size) || 16;
+            document.getElementById('editColor').value      = styleObj.color        || '#000000';
+            document.getElementById('editFontWeight').value = styleObj.font_weight  || 'normal';
             setSelectValue('editFontFamily', styleObj.font_family || 'Arial, sans-serif');
         }
     }
@@ -958,6 +1767,7 @@ function closeEditModal() {
     document.getElementById('editModal').classList.remove('active');
 }
 
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
 function openSettings() {
     document.getElementById('settingsModal').classList.add('active');
 }
@@ -966,16 +1776,39 @@ function closeSettings() {
     document.getElementById('settingsModal').classList.remove('active');
 }
 
-document.getElementById('editModal').addEventListener('click', function(e) {
-    if (e.target === this) closeEditModal();
+// ─── PUBLISH ──────────────────────────────────────────────────────────────────
+function doPublish() {
+    fetch('../actions/publish.php?site_id=<?php echo $site_id; ?>&ajax=1')
+        .then(() => {
+            document.getElementById('publishModal').classList.add('active');
+        })
+        .catch(() => {
+            // Fallback: still show modal
+            document.getElementById('publishModal').classList.add('active');
+        });
+}
+
+function copyUrl() {
+    const url = document.getElementById('siteUrlText').textContent.trim();
+    navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('copyUrlBtn');
+        btn.textContent = '✅ Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+}
+
+// Close modals on backdrop click
+['editModal', 'settingsModal', 'publishModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('active');
+    });
 });
 
-document.getElementById('settingsModal').addEventListener('click', function(e) {
-    if (e.target === this) closeSettings();
-});
-
-
-
+// Show publish modal if redirected with ?published=1
+<?php if (isset($_GET['published'])): ?>
+document.getElementById('publishModal').classList.add('active');
+<?php endif; ?>
 </script>
 </body>
 </html>

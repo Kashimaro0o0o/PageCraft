@@ -11,7 +11,29 @@ $site_id = (int)$_POST['site_id'];
 $type    = $_POST['section_type'] ?? '';
 
 if ($id > 0) {
-    if ($type === 'header') {
+    if ($type === 'image') {
+        // Handle image upload or URL
+        if (!empty($_FILES['image_file']['name'])) {
+            $uploadDir = '../uploads/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+            $ext     = strtolower(pathinfo($_FILES['image_file']['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg','jpeg','png','gif','webp'];
+            if (!in_array($ext, $allowed)) {
+                header("Location: ../pages/editor.php?site_id=$site_id&error=invalid_file");
+                exit();
+            }
+            $filename = 'img_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            move_uploaded_file($_FILES['image_file']['tmp_name'], $uploadDir . $filename);
+            $content = '../uploads/' . $filename;
+        }
+        // If content is empty and no file uploaded, keep existing content
+        if (empty($content) && empty($_FILES['image_file']['name'])) {
+            $existing = $conn->query("SELECT content FROM sections WHERE id = $id")->fetch_assoc();
+            $content = $existing['content'] ?? '';
+        }
+        $stmt = $conn->prepare("UPDATE sections SET content = ? WHERE id = ?");
+        $stmt->bind_param("si", $content, $id);
+    } elseif ($type === 'header') {
         $bg    = $_POST['bg_color']   ?? '#1a1a2e';
         $color = $_POST['text_color'] ?? '#ffffff';
         $align = $_POST['text_align'] ?? 'left';
@@ -51,3 +73,4 @@ if ($id > 0) {
 header("Location: ../pages/editor.php?site_id=$site_id");
 exit();
 ?>
+

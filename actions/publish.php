@@ -9,7 +9,12 @@ if (!isset($_SESSION['user_id'])) {
 $site_id = (int)$_GET['site_id'];
 $conn->query("UPDATE sites SET is_published = 1 WHERE id = $site_id");
 
-// Redirect back to editor with published=1 flag so popup shows
+// AJAX call — just return OK
+if (isset($_GET['ajax'])) {
+    echo json_encode(['ok' => true]);
+    exit();
+}
+
+// Normal redirect for backwards compatibility
 header("Location: ../pages/editor.php?site_id=$site_id&published=1");
 exit();
-?>
