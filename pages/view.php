@@ -176,6 +176,27 @@ $sections = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND is
         <?php elseif ($sec['type'] === 'divider'): ?>
             <div class="section-divider"><hr></div>
 
+        <?php elseif ($sec['type'] === 'button'): ?>
+            <?php $style = json_decode($sec['style'] ?? '{}', true); ?>
+            <div style="padding:32px 48px; text-align:<?php echo $style['text_align'] ?? 'center'; ?>;">
+                <a href="<?php echo htmlspecialchars($style['url'] ?? '#'); ?>"
+                   target="_blank"
+                   style="display:inline-block;
+                          background:<?php echo $style['bg'] ?? '#6c3afc'; ?>;
+                          color:<?php echo $style['color'] ?? '#ffffff'; ?>;
+                          padding:14px 36px;
+                          border-radius:<?php echo $style['radius'] ?? '12px'; ?>;
+                          font-size:<?php echo $style['font_size'] ?? '16px'; ?>;
+                          font-weight:<?php echo $style['font_weight'] ?? 'bold'; ?>;
+                          text-decoration:none;
+                          box-shadow:0 4px 20px rgba(0,0,0,0.15);
+                          transition:all 0.2s;"
+                   onmouseover="this.style.opacity='0.85';this.style.transform='translateY(-2px)'"
+                   onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">
+                    <?php echo htmlspecialchars($sec['content']); ?>
+                </a>
+            </div>
+
         <?php elseif ($sec['type'] === 'footer'): ?>
             <div class="section-footer">
                 <strong><?php echo htmlspecialchars($sec['content']); ?></strong>

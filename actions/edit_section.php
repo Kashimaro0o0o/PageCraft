@@ -11,7 +11,26 @@ $site_id = (int)$_POST['site_id'];
 $type    = $_POST['section_type'] ?? '';
 
 if ($id > 0) {
-    if ($type === 'image') {
+    if ($type === 'button') {
+        $url    = $_POST['btn_url']         ?? '#';
+        $bg     = $_POST['btn_bg']          ?? '#6c3afc';
+        $color  = $_POST['btn_color']       ?? '#ffffff';
+        $align  = $_POST['btn_align']       ?? 'center';
+        $size   = !empty($_POST['btn_font_size']) ? $_POST['btn_font_size'] : '16';
+        $weight = $_POST['btn_font_weight'] ?? 'bold';
+        $radius = $_POST['btn_radius']      ?? '12px';
+        $style  = json_encode([
+            'url'         => $url,
+            'bg'          => $bg,
+            'color'       => $color,
+            'text_align'  => $align,
+            'font_size'   => $size . 'px',
+            'font_weight' => $weight,
+            'radius'      => $radius,
+        ]);
+        $stmt = $conn->prepare("UPDATE sections SET content = ?, style = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $content, $style, $id);
+    } elseif ($type === 'image') {
         // Handle image upload or URL
         if (!empty($_FILES['image_file']['name'])) {
             $uploadDir = '../uploads/';
@@ -26,7 +45,6 @@ if ($id > 0) {
             move_uploaded_file($_FILES['image_file']['tmp_name'], $uploadDir . $filename);
             $content = '../uploads/' . $filename;
         }
-        // If content is empty and no file uploaded, keep existing content
         if (empty($content) && empty($_FILES['image_file']['name'])) {
             $existing = $conn->query("SELECT content FROM sections WHERE id = $id")->fetch_assoc();
             $content = $existing['content'] ?? '';

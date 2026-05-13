@@ -253,23 +253,15 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
                     </div>
 
                     <label class="form-label fw-bold mb-3">Choose a Template</label>
-                    <input type="hidden" name="template_type" id="selectedTemplate" value="blank">
+                    <input type="hidden" name="template" id="selectedTemplate" value="blank">
 
-                    <div class="row g-3 mb-4" style="max-height:420px;overflow-y:auto;">
-
-                        <!-- ── General Purpose ── -->
-                        <div class="col-12">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span style="font-size:13px;font-weight:800;color:#6c3afc;text-transform:uppercase;letter-spacing:.06em;">🌐 General Purpose</span>
-                                <div style="flex:1;height:1px;background:#e5e7eb;"></div>
-                            </div>
-                        </div>
+                    <div class="row g-3 mb-4">
 
                         <!-- Blank -->
-                        <div class="col-6 col-md-3">
+                        <div class="col-6 col-md-4">
                             <div class="template-card selected" onclick="selectTemplate(this,'blank')">
                                 <div class="template-preview" style="background:#f8f9fa;">
-                                    <div style="font-size:32px;">⬜</div>
+                                    <div style="font-size:36px;">⬜</div>
                                 </div>
                                 <div class="template-label">Blank</div>
                                 <div class="template-sub">Empty canvas</div>
@@ -277,43 +269,21 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
                         </div>
 
                         <!-- Business -->
-                        <div class="col-6 col-md-3">
+                        <div class="col-6 col-md-4">
                             <div class="template-card" onclick="selectTemplate(this,'business')">
                                 <div class="template-preview" style="background:linear-gradient(135deg,#1a1a2e,#16213e);">
-                                    <div style="font-size:32px;">🏢</div>
+                                    <div style="font-size:36px;">🏢</div>
                                 </div>
                                 <div class="template-label">Business</div>
                                 <div class="template-sub">Professional company</div>
                             </div>
                         </div>
 
-                        <!-- Portfolio -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'portfolio')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#0f0f0f,#1a1a1a);">
-                                    <div style="font-size:32px;">🎨</div>
-                                </div>
-                                <div class="template-label">Portfolio</div>
-                                <div class="template-sub">Showcase your work</div>
-                            </div>
-                        </div>
-
-                        <!-- Blog -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'blog')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#1a1a2e,#2d1b69);">
-                                    <div style="font-size:32px;">📝</div>
-                                </div>
-                                <div class="template-label">Blog</div>
-                                <div class="template-sub">Articles & posts</div>
-                            </div>
-                        </div>
-
                         <!-- Shop -->
-                        <div class="col-6 col-md-3">
+                        <div class="col-6 col-md-4">
                             <div class="template-card" onclick="selectTemplate(this,'shop')">
                                 <div class="template-preview" style="background:linear-gradient(135deg,#064e3b,#065f46);">
-                                    <div style="font-size:32px;">🛒</div>
+                                    <div style="font-size:36px;">🛒</div>
                                 </div>
                                 <div class="template-label">Shop</div>
                                 <div class="template-sub">Product listings</div>
@@ -321,243 +291,35 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
                         </div>
 
                         <!-- Restaurant -->
-                        <div class="col-6 col-md-3">
+                        <div class="col-6 col-md-4">
                             <div class="template-card" onclick="selectTemplate(this,'restaurant')">
                                 <div class="template-preview" style="background:linear-gradient(135deg,#7f1d1d,#991b1b);">
-                                    <div style="font-size:32px;">🍽️</div>
+                                    <div style="font-size:36px;">🍽️</div>
                                 </div>
                                 <div class="template-label">Restaurant</div>
                                 <div class="template-sub">Menu & dining</div>
                             </div>
                         </div>
 
-                        <!-- Hotel -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'hotel')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#1c1917,#292524);">
-                                    <div style="font-size:32px;">🏨</div>
-                                </div>
-                                <div class="template-label">Hotel</div>
-                                <div class="template-sub">Rooms & amenities</div>
-                            </div>
-                        </div>
-
-                        <!-- Resume -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'resume')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#1e3a5f,#1e40af);">
-                                    <div style="font-size:32px;">💼</div>
-                                </div>
-                                <div class="template-label">Resume / CV</div>
-                                <div class="template-sub">Personal profile</div>
-                            </div>
-                        </div>
-
-                        <!-- ── School / Education ── -->
-                        <div class="col-12">
-                            <div class="d-flex align-items-center gap-2 mt-2 mb-1">
-                                <span style="font-size:13px;font-weight:800;color:#6c3afc;text-transform:uppercase;letter-spacing:.06em;">🏫 School / Education</span>
-                                <div style="flex:1;height:1px;background:#e5e7eb;"></div>
-                            </div>
-                        </div>
-
-                        <!-- School -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'school')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#1e40af,#1d4ed8);">
-                                    <div style="font-size:32px;">🏫</div>
-                                </div>
-                                <div class="template-label">School</div>
-                                <div class="template-sub">Education & announcements</div>
-                            </div>
-                        </div>
-
-                        <!-- Course -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'course')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#4c1d95,#5b21b6);">
-                                    <div style="font-size:32px;">📚</div>
-                                </div>
-                                <div class="template-label">Course</div>
-                                <div class="template-sub">Lessons & enrollment</div>
-                            </div>
-                        </div>
-
-                        <!-- Gym -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'gym')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#111827,#1f2937);">
-                                    <div style="font-size:32px;">🏋️</div>
-                                </div>
-                                <div class="template-label">Gym / Fitness</div>
-                                <div class="template-sub">Classes & trainers</div>
-                            </div>
-                        </div>
-
-                        <!-- Spa -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'spa')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#365314,#3f6212);">
-                                    <div style="font-size:32px;">💆</div>
-                                </div>
-                                <div class="template-label">Spa / Salon</div>
-                                <div class="template-sub">Services & booking</div>
-                            </div>
-                        </div>
-
-                        <!-- ── Creative ── -->
-                        <div class="col-12">
-                            <div class="d-flex align-items-center gap-2 mt-2 mb-1">
-                                <span style="font-size:13px;font-weight:800;color:#6c3afc;text-transform:uppercase;letter-spacing:.06em;">🎭 Creative</span>
-                                <div style="flex:1;height:1px;background:#e5e7eb;"></div>
-                            </div>
-                        </div>
-
-                        <!-- Photography -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'photography')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#0f0f0f,#262626);">
-                                    <div style="font-size:32px;">📸</div>
-                                </div>
-                                <div class="template-label">Photography</div>
-                                <div class="template-sub">Gallery & packages</div>
-                            </div>
-                        </div>
-
                         <!-- Music -->
-                        <div class="col-6 col-md-3">
+                        <div class="col-6 col-md-4">
                             <div class="template-card" onclick="selectTemplate(this,'music')">
                                 <div class="template-preview" style="background:linear-gradient(135deg,#18181b,#27272a);">
-                                    <div style="font-size:32px;">🎵</div>
+                                    <div style="font-size:36px;">🎵</div>
                                 </div>
                                 <div class="template-label">Music / Band</div>
                                 <div class="template-sub">Artist profile & shows</div>
                             </div>
                         </div>
 
-                        <!-- Gaming -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'gaming')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#0a0a0a,#14532d);">
-                                    <div style="font-size:32px;">🎮</div>
-                                </div>
-                                <div class="template-label">Gaming</div>
-                                <div class="template-sub">Game showcase</div>
-                            </div>
-                        </div>
-
-                        <!-- ── Events & Real Estate ── -->
-                        <div class="col-12">
-                            <div class="d-flex align-items-center gap-2 mt-2 mb-1">
-                                <span style="font-size:13px;font-weight:800;color:#6c3afc;text-transform:uppercase;letter-spacing:.06em;">🎉 Events & Real Estate</span>
-                                <div style="flex:1;height:1px;background:#e5e7eb;"></div>
-                            </div>
-                        </div>
-
-                        <!-- Real Estate -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'realestate')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#1e3a5f,#1e3a8a);">
-                                    <div style="font-size:32px;">🏠</div>
-                                </div>
-                                <div class="template-label">Real Estate</div>
-                                <div class="template-sub">Property listings</div>
-                            </div>
-                        </div>
-
                         <!-- Event -->
-                        <div class="col-6 col-md-3">
+                        <div class="col-6 col-md-4">
                             <div class="template-card" onclick="selectTemplate(this,'event')">
                                 <div class="template-preview" style="background:linear-gradient(135deg,#4a044e,#6b21a8);">
-                                    <div style="font-size:32px;">🎉</div>
+                                    <div style="font-size:36px;">🎉</div>
                                 </div>
                                 <div class="template-label">Event</div>
                                 <div class="template-sub">Schedule & RSVP</div>
-                            </div>
-                        </div>
-
-                        <!-- Conference -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'conference')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#1e3a5f,#075985);">
-                                    <div style="font-size:32px;">🎤</div>
-                                </div>
-                                <div class="template-label">Conference</div>
-                                <div class="template-sub">Speakers & tickets</div>
-                            </div>
-                        </div>
-
-                        <!-- Wedding -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'wedding')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#fdf2f8,#fce7f3);">
-                                    <div style="font-size:32px;">💍</div>
-                                </div>
-                                <div class="template-label">Wedding</div>
-                                <div class="template-sub">Invitation & program</div>
-                            </div>
-                        </div>
-
-                        <!-- ── College Student Templates ── -->
-                        <div class="col-12">
-                            <div class="d-flex align-items-center gap-2 mt-2 mb-1">
-                                <span style="font-size:13px;font-weight:800;color:#6c3afc;text-transform:uppercase;letter-spacing:.06em;">🎓 College / Student</span>
-                                <div style="flex:1;height:1px;background:#e5e7eb;"></div>
-                            </div>
-                        </div>
-
-                        <!-- Student Portfolio -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'student_portfolio')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#1e1b4b,#312e81);">
-                                    <div style="font-size:32px;">🎓</div>
-                                </div>
-                                <div class="template-label">Student Portfolio</div>
-                                <div class="template-sub">Projects & skills</div>
-                            </div>
-                        </div>
-
-                        <!-- Study Blog -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'study_blog')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#064e3b,#065f46);">
-                                    <div style="font-size:32px;">📖</div>
-                                </div>
-                                <div class="template-label">Study Blog</div>
-                                <div class="template-sub">Notes & articles</div>
-                            </div>
-                        </div>
-
-                        <!-- Org / Club -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'org_club')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#7c2d12,#9a3412);">
-                                    <div style="font-size:32px;">🏛️</div>
-                                </div>
-                                <div class="template-label">Org / Club</div>
-                                <div class="template-sub">Events & officers</div>
-                            </div>
-                        </div>
-
-                        <!-- Research Project -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'research_project')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#0c4a6e,#075985);">
-                                    <div style="font-size:32px;">🔬</div>
-                                </div>
-                                <div class="template-label">Research Project</div>
-                                <div class="template-sub">Thesis & findings</div>
-                            </div>
-                        </div>
-
-                        <!-- Campus Event -->
-                        <div class="col-6 col-md-3">
-                            <div class="template-card" onclick="selectTemplate(this,'campus_event')">
-                                <div class="template-preview" style="background:linear-gradient(135deg,#4a044e,#6b21a8);">
-                                    <div style="font-size:32px;">🎤</div>
-                                </div>
-                                <div class="template-label">Campus Event</div>
-                                <div class="template-sub">Program & RSVP</div>
                             </div>
                         </div>
 

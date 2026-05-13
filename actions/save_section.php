@@ -9,8 +9,27 @@ $page_id = (int)$_POST['page_id'];
 $type    = $_POST['type'];
 $site_id = isset($_GET['site_id']) ? (int)$_GET['site_id'] : (int)($_POST['site_id'] ?? 0);
 
-// Handle image upload or URL
-if ($type === 'image') {
+$content = $_POST['content'] ?? '';
+
+if ($type === 'button') {
+    $url    = $_POST['btn_url']         ?? '#';
+    $bg     = $_POST['btn_bg']          ?? '#6c3afc';
+    $color  = $_POST['btn_color']       ?? '#ffffff';
+    $align  = $_POST['btn_align']       ?? 'center';
+    $size   = !empty($_POST['btn_font_size']) ? $_POST['btn_font_size'] : '16';
+    $weight = $_POST['btn_font_weight'] ?? 'bold';
+    $radius = $_POST['btn_radius']      ?? '12px';
+    $style  = json_encode([
+        'url'         => $url,
+        'bg'          => $bg,
+        'color'       => $color,
+        'text_align'  => $align,
+        'font_size'   => $size . 'px',
+        'font_weight' => $weight,
+        'radius'      => $radius,
+    ]);
+
+} elseif ($type === 'image') {
     if (!empty($_FILES['image_file']['name'])) {
         $uploadDir = '../uploads/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
@@ -20,22 +39,16 @@ if ($type === 'image') {
         $filename = 'img_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
         move_uploaded_file($_FILES['image_file']['tmp_name'], $uploadDir . $filename);
         $content = '../uploads/' . $filename;
-    } else {
-        $content = $_POST['content'] ?? '';
     }
-} else {
-    $content = $_POST['content'] ?? '';
-}
+    $style = json_encode([]);
 
-$text_align  = $_POST['text_align']  ?? 'left';
-$font_size   = !empty($_POST['font_size']) ? $_POST['font_size'] : '16';
-$color       = $_POST['color']       ?? '#000000';
-$weight      = $_POST['font_weight'] ?? 'normal';
-$font_family = $_POST['font_family'] ?? 'Arial, sans-serif';
-
-if ($type === 'header') {
-    $bg    = $_POST['header_bg']    ?? '#1a1a2e';
-    $hcolor= $_POST['header_color'] ?? '#ffffff';
+} elseif ($type === 'header') {
+    $text_align  = $_POST['text_align']  ?? 'left';
+    $font_size   = !empty($_POST['font_size']) ? $_POST['font_size'] : '24';
+    $weight      = $_POST['font_weight'] ?? 'bold';
+    $font_family = $_POST['font_family'] ?? 'Arial, sans-serif';
+    $bg          = $_POST['header_bg']   ?? '#1a1a2e';
+    $hcolor      = $_POST['header_color']?? '#ffffff';
     $style = json_encode([
         'bg'          => $bg,
         'color'       => $hcolor,
@@ -44,7 +57,13 @@ if ($type === 'header') {
         'font_weight' => $weight,
         'font_family' => $font_family,
     ]);
+
 } else {
+    $text_align  = $_POST['text_align']  ?? 'left';
+    $font_size   = !empty($_POST['font_size']) ? $_POST['font_size'] : '16';
+    $color       = $_POST['color']       ?? '#000000';
+    $weight      = $_POST['font_weight'] ?? 'normal';
+    $font_family = $_POST['font_family'] ?? 'Arial, sans-serif';
     $style = json_encode([
         'text_align'  => $text_align,
         'font_size'   => $font_size . 'px',

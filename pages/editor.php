@@ -757,6 +757,10 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
                 <span class="type-icon">➖</span>Divider
                 <div class="drag-hint">drag or click</div>
             </div>
+            <div class="type-btn" draggable="true" data-type="button" onclick="selectType('button', this)">
+                <span class="type-icon">🔗</span>Button
+                <div class="drag-hint">drag or click</div>
+            </div>
         </div>
 
         <div class="add-form">
@@ -973,6 +977,28 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
                                     min-height:<?php echo !empty($sec['height']) ? $sec['height'].'px' : ''; ?>">
                             <?php echo nl2br(htmlspecialchars($sec['content'])); ?>
                         </div>
+
+                    <?php elseif ($sec['type'] === 'button'): ?>
+                        <?php $style = json_decode($sec['style'] ?? '{}', true); ?>
+                        <div style="padding:24px 32px; text-align:<?php echo $style['text_align'] ?? 'center'; ?>; min-height:<?php echo !empty($sec['height']) ? $sec['height'].'px' : '80px'; ?>; display:flex; align-items:center; justify-content:<?php echo ($style['text_align'] ?? 'center') === 'left' ? 'flex-start' : (($style['text_align'] ?? 'center') === 'right' ? 'flex-end' : 'center'); ?>;">
+                            <a href="<?php echo htmlspecialchars($style['url'] ?? '#'); ?>"
+                               target="_blank"
+                               style="display:inline-block;
+                                      background:<?php echo $style['bg'] ?? '#6c3afc'; ?>;
+                                      color:<?php echo $style['color'] ?? '#ffffff'; ?>;
+                                      padding:<?php echo $style['padding'] ?? '14px 32px'; ?>;
+                                      border-radius:<?php echo $style['radius'] ?? '12px'; ?>;
+                                      font-size:<?php echo $style['font_size'] ?? '16px'; ?>;
+                                      font-weight:<?php echo $style['font_weight'] ?? 'bold'; ?>;
+                                      font-family:<?php echo $style['font_family'] ?? 'Arial, sans-serif'; ?>;
+                                      text-decoration:none;
+                                      box-shadow:0 4px 15px rgba(0,0,0,0.15);
+                                      transition:all 0.2s;"
+                               onmouseover="this.style.opacity='0.85';this.style.transform='translateY(-2px)'"
+                               onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">
+                                <?php echo htmlspecialchars($sec['content']); ?>
+                            </a>
+                        </div>
                     <?php endif; ?>
 
                     <div class="resize-handle" data-id="<?php echo $sec['id']; ?>" title="Drag to resize"></div>
@@ -1112,6 +1138,58 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
                             <option value="'Roboto Mono', monospace">Roboto Mono</option>
                         </optgroup>
                     </select>
+                </div>
+            </div>
+
+            <!-- Button-specific fields -->
+            <div id="editButtonStyles" style="display:none;">
+                <div style="margin-bottom:12px;">
+                    <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Link URL</label>
+                    <input type="text" name="btn_url" id="editBtnUrl" placeholder="https://facebook.com/yourpage" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Button Color</label>
+                        <input type="color" name="btn_bg" id="editBtnBg" value="#6c3afc" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;padding:3px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Color</label>
+                        <input type="color" name="btn_color" id="editBtnColor" value="#ffffff" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;padding:3px;">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Alignment</label>
+                        <select name="btn_align" id="editBtnAlign" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+                            <option value="center">Center</option>
+                            <option value="left">Left</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Size (px)</label>
+                        <input type="number" name="btn_font_size" id="editBtnFontSize" value="16" min="10" max="40" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Border Radius</label>
+                        <select name="btn_radius" id="editBtnRadius" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+                            <option value="4px">Sharp</option>
+                            <option value="8px">Slightly Rounded</option>
+                            <option value="12px" selected>Rounded</option>
+                            <option value="999px">Pill</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Weight</label>
+                        <select name="btn_font_weight" id="editBtnWeight" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+                            <option value="normal">Normal</option>
+                            <option value="600">Semi-Bold</option>
+                            <option value="bold" selected>Bold</option>
+                            <option value="900">Black</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -1550,6 +1628,7 @@ function selectType(type, btn) {
         header:  { title: '🔝 Header Section', label: 'Brand Name',           placeholder: 'My Awesome Website', input: 'text' },
         footer:  { title: '🔚 Footer Section', label: 'Footer Text',          placeholder: '© 2026 My Website.', input: 'text' },
         divider: { title: '➖ Divider',         label: 'No content needed',    placeholder: '', input: 'none' },
+        button:  { title: '🔗 Button/Link',    label: 'Button Text',          placeholder: 'Click Here', input: 'text' },
     };
 
     const cfg = labels[type] || labels.text;
@@ -1576,7 +1655,7 @@ function selectType(type, btn) {
     } else {
         uploadGroup.style.display = 'none';
         headerColorOpts.style.display = (type === 'header') ? '' : 'none';
-        textStyleOpts.style.display = (type === 'hero' || type === 'divider' || type === 'footer') ? 'none' : '';
+        textStyleOpts.style.display = (type === 'hero' || type === 'divider' || type === 'footer' || type === 'button') ? 'none' : '';
         document.getElementById('contentLabel').textContent = cfg.label;
 
         if (cfg.input === 'none') {
@@ -1694,6 +1773,7 @@ function openEditModal(id, content, type, styleObj) {
 
     const textStyles   = document.getElementById('editTextStyles');
     const headerStyles = document.getElementById('editHeaderStyles');
+    const buttonStyles = document.getElementById('editButtonStyles');
     const imageGroup   = document.getElementById('editImageGroup');
     const contentGroup = document.getElementById('editContentGroup');
     const sub          = document.getElementById('editModalSub');
@@ -1709,6 +1789,7 @@ function openEditModal(id, content, type, styleObj) {
         imageGroup.style.display     = '';
         textStyles.style.display     = 'none';
         headerStyles.style.display   = 'none';
+        buttonStyles.style.display   = 'none';
         sub.textContent = 'Change or replace the image';
 
         // Show current image
@@ -1724,11 +1805,27 @@ function openEditModal(id, content, type, styleObj) {
             preview.style.display = 'none';
             placeholder.style.display = 'flex';
         }
+    } else if (type === 'button') {
+        contentGroup.style.display   = '';
+        imageGroup.style.display     = 'none';
+        textStyles.style.display     = 'none';
+        headerStyles.style.display   = 'none';
+        buttonStyles.style.display   = '';
+        sub.textContent = 'Edit button text, link, and styles';
+        document.getElementById('editSectionContent').value = content;
+        document.getElementById('editBtnUrl').value         = styleObj.url        || '';
+        document.getElementById('editBtnBg').value          = styleObj.bg         || '#6c3afc';
+        document.getElementById('editBtnColor').value       = styleObj.color      || '#ffffff';
+        document.getElementById('editBtnFontSize').value    = parseInt(styleObj.font_size) || 16;
+        document.getElementById('editBtnWeight').value      = styleObj.font_weight || 'bold';
+        document.getElementById('editBtnAlign').value       = styleObj.text_align  || 'center';
+        setSelectValue('editBtnRadius', styleObj.radius || '12px');
     } else if (type === 'header') {
         contentGroup.style.display   = '';
         imageGroup.style.display     = 'none';
         textStyles.style.display     = 'none';
         headerStyles.style.display   = '';
+        buttonStyles.style.display   = 'none';
         sub.textContent = 'Edit header brand name and styles';
         document.getElementById('editSectionContent').value = content;
         document.getElementById('editBgColor').value         = styleObj.bg         || '#1a1a2e';
@@ -1742,6 +1839,7 @@ function openEditModal(id, content, type, styleObj) {
         imageGroup.style.display     = 'none';
         textStyles.style.display     = (type === 'divider' || type === 'hero') ? 'none' : '';
         headerStyles.style.display   = 'none';
+        buttonStyles.style.display   = 'none';
         sub.textContent = 'Update your section content and styles';
         document.getElementById('editSectionContent').value = content;
         if (styleObj) {
