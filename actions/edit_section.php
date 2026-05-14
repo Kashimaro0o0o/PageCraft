@@ -74,13 +74,16 @@ if ($id > 0) {
         $color  = $_POST['color']       ?? '#000000';
         $weight = $_POST['font_weight'] ?? 'normal';
         $family = $_POST['font_family'] ?? 'Arial, sans-serif';
-        $style  = json_encode([
+        $bg     = $_POST['section_bg']  ?? '';
+        $styleArr = [
             'text_align'  => $align,
             'font_size'   => $size . 'px',
             'color'       => $color,
             'font_weight' => $weight,
             'font_family' => $family,
-        ]);
+        ];
+        if ($bg !== '') $styleArr['bg'] = $bg;
+        $style = json_encode($styleArr);
         $stmt = $conn->prepare("UPDATE sections SET content = ?, style = ? WHERE id = ?");
         $stmt->bind_param("ssi", $content, $style, $id);
     }

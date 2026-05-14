@@ -91,7 +91,7 @@ $sections = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND is
 
         .section-text { max-width: 800px; margin: 0 auto; padding: 60px 40px; font-size: 17px; line-height: 1.8; }
 
-        .section-image { padding: 40px; background: #f8f9ff; position: relative; min-height: 200px; }
+        .section-image { padding: 40px; background: #f8f9ff; min-height: 200px; }
         .section-image img { border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); display: block; }
 
         .section-divider { padding: 10px 48px; }
@@ -122,11 +122,23 @@ $sections = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND is
 <?php if ($sections && $sections->num_rows > 0): ?>
     <?php while ($sec = $sections->fetch_assoc()): ?>
 
-        <?php if ($sec['type'] === 'hero'): ?>
-            <div class="section-hero">
+       <?php if ($sec['type'] === 'hero'): ?>
+            <?php $style = json_decode($sec['style'] ?? '{}', true); ?>
+            <div class="section-hero"
+                 style="<?php if (!empty($style['bg'])) echo 'background:'.$style['bg'].';'; ?>
+                        <?php if (!empty($style['color'])) echo 'color:'.$style['color'].';'; ?>
+                        <?php if (!empty($style['text_align'])) echo 'text-align:'.$style['text_align'].';'; ?>">
                 <div class="container">
-                    <h1><?php echo htmlspecialchars($sec['content']); ?></h1>
-                    <p class="fs-5 opacity-75 mt-2">Welcome to <?php echo htmlspecialchars($site['site_name']); ?></p>
+                    <h1 style="<?php if (!empty($style['font_size'])) echo 'font-size:'.$style['font_size'].';'; ?>
+                                <?php if (!empty($style['font_weight'])) echo 'font-weight:'.$style['font_weight'].';'; ?>
+                                <?php if (!empty($style['font_family'])) echo 'font-family:'.$style['font_family'].';'; ?>">
+                        <?php echo htmlspecialchars($sec['content']); ?>
+                    </h1>
+                    <?php if (!empty($style['subtitle'])): ?>
+                        <p class="fs-5 opacity-75 mt-2"><?php echo htmlspecialchars($style['subtitle']); ?></p>
+                    <?php else: ?>
+                        <p class="fs-5 opacity-75 mt-2">Welcome to <?php echo htmlspecialchars($site['site_name']); ?></p>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -155,19 +167,27 @@ $sections = $conn->query("SELECT * FROM sections WHERE page_id = $page_id AND is
 
         <?php elseif ($sec['type'] === 'image'): ?>
             <?php
-                $imgStyle   = json_decode($sec['style'] ?? '{}', true) ?: [];
-                $imgW       = !empty($imgStyle['img_width'])  ? (int)$imgStyle['img_width']  : null;
-                $imgH       = !empty($imgStyle['img_height']) ? (int)$imgStyle['img_height'] : null;
-                $imgX       = isset($imgStyle['img_x']) ? (int)$imgStyle['img_x'] : 20;
-                $imgY       = isset($imgStyle['img_y']) ? (int)$imgStyle['img_y'] : 20;
-                $containerH = max(200, $imgY + ($imgH ?: 300) + 20);
-                $iStr       = "position:absolute;left:{$imgX}px;top:{$imgY}px;";
-                if ($imgW) $iStr .= "width:{$imgW}px;";
-                if ($imgH) $iStr .= "height:{$imgH}px;";
+                $imgStyle    = json_decode($sec['style'] ?? '{}', true) ?: [];
+                $imgW        = !empty($imgStyle['img_width'])  ? (int)$imgStyle['img_width']  : null;
+                $imgH        = !empty($imgStyle['img_height']) ? (int)$imgStyle['img_height'] : null;
+                $imgX        = isset($imgStyle['img_x']) ? (int)$imgStyle['img_x'] : 0;
+                $imgY        = isset($imgStyle['img_y']) ? (int)$imgStyle['img_y'] : 0;
+                $isCentered  = ($imgX === 0 && $imgY === 0 && !$imgW);
+                if ($isCentered) {
+                    $sectionStyle = 'padding:20px 40px;';
+                    $iStr = 'display:block;width:100%;border-radius:16px;';
+                    if ($imgH) $iStr .= "height:{$imgH}px;object-fit:cover;";
+                } else {
+                    $containerH = max(200, $imgY + ($imgH ?: 300) + 20);
+                    $sectionStyle = "min-height:{$containerH}px;position:relative;";
+                    $iStr = "position:absolute;left:{$imgX}px;top:{$imgY}px;";
+                    if ($imgW) $iStr .= "width:{$imgW}px;";
+                    if ($imgH) $iStr .= "height:{$imgH}px;object-fit:cover;";
+                }
             ?>
-            <div class="section-image" style="min-height:<?php echo $containerH; ?>px;">
+            <div class="section-image" style="<?php echo $sectionStyle; ?>">
                 <?php if (!empty($sec['content'])): ?>
-                    <img src="<?php echo htmlspecialchars($sec['content']); ?>" alt="Image" style="<?php echo $iStr; ?>">
+                    <img src="<?php echo htmlspecialchars($sec['content']); ?>" alt="Image" style="<?php echo $iStr; ?>border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.12);">
                 <?php else: ?>
                     <div class="text-center py-5 text-muted fs-1">🖼️</div>
                 <?php endif; ?>

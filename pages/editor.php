@@ -429,13 +429,21 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
         .section-block.resizing { cursor: ns-resize; }
 
         /* ─── IMAGE RESIZER (8-handle, always freely positionable) ─── */
-        .img-resizer-wrap {
+        ..img-resizer-wrap {
             position: absolute;
             display: inline-block;
             line-height: 0;
             cursor: move;
             z-index: 10;
         }
+        .img-resizer-wrap.centered {
+            position: relative !important;
+            display: block !important;
+            width: 100% !important;
+            margin: 0 auto;
+            cursor: default;
+        }
+        
 
         .img-resizer-wrap img { display: block; border-radius: 6px; }
 
@@ -529,8 +537,9 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
         .wrap-btn.active .wrap-btn-label { color: #6c3afc; }
 
         /* ─── SECTION RENDERINGS ─── */
-        .section-hero {
+       .section-hero {
             background: linear-gradient(135deg, #6c3afc 0%, #e040fb 50%, #ff6b6b 100%);
+            /* inline style bg from PHP will override this when set */
             color: #fff;
             padding: 48px 32px;
             text-align: center;
@@ -561,19 +570,28 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
             min-height: 60px;
         }
 
-        .section-text-block { padding: 24px 32px; font-size: 15px; line-height: 1.7; color: #374151; min-height: 60px; }
-
-        .section-image-block { padding: 20px 32px; min-height: 200px; position: relative; overflow: visible; }
+          .section-text-block { padding: 24px 32px; font-size: 15px; line-height: 1.7; color: #374151; min-height: 60px; }
+        .section-text-block.is-empty { color: #c4c9d4; font-style: italic; border: 2px dashed #d1d5db; border-radius: 8px; }
+        .section-image-block { padding: 20px 32px; min-height: 200px; }
         .section-image-block img { max-width: 100%; border-radius: 12px; display: block; }
         .section-image-block .img-placeholder {
-            background: linear-gradient(135deg, #f3f4f6, #e9edf5);
-            height: 160px;
+            border: 2px dashed #c4b5fd;
+            height: 200px;
             border-radius: 12px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
-            color: #9ca3af;
+            font-size: 40px;
+            color: #a78bfa;
+            background: rgba(108,58,252,0.04);
+            gap: 8px;
+        }
+        .section-image-block .img-placeholder span {
+            font-size: 13px;
+            font-weight: 600;
+            color: #a78bfa;
+            font-style: normal;
         }
 
         .section-controls {
@@ -899,10 +917,21 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
 
                     <div class="drag-handle" title="Drag to reorder">⠿</div>
 
-                    <?php if ($sec['type'] === 'hero'): ?>
-                        <div class="section-hero" style="min-height:<?php echo !empty($sec['height']) ? $sec['height'].'px' : ''; ?>">
-                            <h2><?php echo htmlspecialchars($sec['content']); ?></h2>
-                            <p>Your hero section</p>
+                   <?php if ($sec['type'] === 'hero'): ?>
+                        <?php $style = json_decode($sec['style'] ?? '{}', true); ?>
+                        <div class="section-hero"
+                             style="<?php if (!empty($style['bg'])) echo 'background:'.$style['bg'].';'; ?>
+                                    <?php if (!empty($style['color'])) echo 'color:'.$style['color'].';'; ?>
+                                    <?php if (!empty($style['text_align'])) echo 'text-align:'.$style['text_align'].';'; ?>
+                                    min-height:<?php echo !empty($sec['height']) ? $sec['height'].'px' : ''; ?>">
+                            <h2 style="<?php if (!empty($style['font_size'])) echo 'font-size:'.$style['font_size'].';'; ?>
+                                       <?php if (!empty($style['font_weight'])) echo 'font-weight:'.$style['font_weight'].';'; ?>
+                                       <?php if (!empty($style['font_family'])) echo 'font-family:'.$style['font_family'].';'; ?>">
+                                <?php echo htmlspecialchars($sec['content']); ?>
+                            </h2>
+                            <?php if (!empty($style['subtitle'])): ?>
+                                <p style="opacity:0.85;"><?php echo htmlspecialchars($style['subtitle']); ?></p>
+                            <?php endif; ?>
                         </div>
 
                     <?php elseif ($sec['type'] === 'header'): ?>
@@ -924,22 +953,27 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
                             <?php echo htmlspecialchars($sec['content']); ?>
                         </div>
 
-                    <?php elseif ($sec['type'] === 'image'): ?>
+                   <?php elseif ($sec['type'] === 'image'): ?>
                         <?php
-                            $imgStyle = json_decode($sec['style'] ?? '{}', true) ?: [];
-                            $imgW    = !empty($imgStyle['img_width'])  ? (int)$imgStyle['img_width']  : null;
-                            $imgH    = !empty($imgStyle['img_height']) ? (int)$imgStyle['img_height'] : null;
-                            $imgX    = isset($imgStyle['img_x']) ? (int)$imgStyle['img_x'] : 20;
-                            $imgY    = isset($imgStyle['img_y']) ? (int)$imgStyle['img_y'] : 20;
-                            $wrapStyle = "left:{$imgX}px;top:{$imgY}px;";
-                            if ($imgW) $wrapStyle .= "width:{$imgW}px;";
-                            $imgInline = '';
+                            $imgStyle  = json_decode($sec['style'] ?? '{}', true) ?: [];
+                            $imgW      = !empty($imgStyle['img_width'])  ? (int)$imgStyle['img_width']  : null;
+                            $imgH      = !empty($imgStyle['img_height']) ? (int)$imgStyle['img_height'] : null;
+                            $imgX      = isset($imgStyle['img_x']) ? (int)$imgStyle['img_x'] : 0;
+                            $imgY      = isset($imgStyle['img_y']) ? (int)$imgStyle['img_y'] : 0;
+                            $isCentered = ($imgX === 0 && $imgY === 0 && !$imgW);
+                            if ($isCentered) {
+                                $wrapStyle = 'position:relative;display:block;margin:0 auto;';
+                            } else {
+                                $wrapStyle = "position:absolute;left:{$imgX}px;top:{$imgY}px;";
+                                if ($imgW) $wrapStyle .= "width:{$imgW}px;";
+                            }
+                            $imgInline = 'max-width:100%;display:block;';
                             if ($imgW) $imgInline .= "width:{$imgW}px;";
-                            if ($imgH) $imgInline .= "height:{$imgH}px;";
+                            if ($imgH) $imgInline .= "height:{$imgH}px;object-fit:cover;";
                         ?>
-                        <div class="section-image-block">
+                        <div class="section-image-block" style="<?php echo $isCentered ? 'padding:20px 32px;' : 'padding:20px 32px;min-height:'.($imgH ? ($imgH+40) : 200).'px;position:relative;overflow:visible;'; ?>">
                             <?php if (!empty($sec['content'])): ?>
-                            <div class="img-resizer-wrap"
+                            <div class="img-resizer-wrap<?php echo $isCentered ? ' centered' : ''; ?>"
                                  data-sec-id="<?php echo $sec['id']; ?>"
                                  data-img-x="<?php echo $imgX; ?>"
                                  data-img-y="<?php echo $imgY; ?>"
@@ -954,10 +988,10 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
                                 <div class="img-handle sw"></div>
                                 <div class="img-handle w"></div>
                                 <img src="<?php echo htmlspecialchars($sec['content']); ?>" alt="Image"
-                                     style="<?php echo $imgInline; ?>max-width:100%;">
+                                     style="<?php echo $imgInline; ?>border-radius:12px;">
                             </div>
                             <?php else: ?>
-                                <div class="img-placeholder">🖼️</div>
+                                <div class="img-placeholder">🖼️<span>Click ✏️ Edit to add an image</span></div>
                             <?php endif; ?>
                         </div>
 
@@ -966,16 +1000,16 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
                             <hr style="flex:1; border:none; border-top:3px solid; border-image:linear-gradient(135deg,#6c3afc,#e040fb) 1;">
                         </div>
 
-                    <?php elseif ($sec['type'] === 'text'): ?>
+                          <?php elseif ($sec['type'] === 'text'): ?>
                         <?php $style = json_decode($sec['style'] ?? '{}', true); ?>
-                        <div class="section-text-block"
+                        <div class="section-text-block<?php echo empty(trim($sec['content'])) ? ' is-empty' : ''; ?>"
                              style="text-align: <?php echo $style['text_align'] ?? 'left'; ?>;
                                     font-size: <?php echo $style['font_size'] ?? '16px'; ?>;
                                     color: <?php echo $style['color'] ?? '#000'; ?>;
                                     font-weight: <?php echo $style['font_weight'] ?? 'normal'; ?>;
                                     font-family: <?php echo $style['font_family'] ?? 'Arial, sans-serif'; ?>;
                                     min-height:<?php echo !empty($sec['height']) ? $sec['height'].'px' : ''; ?>">
-                            <?php echo nl2br(htmlspecialchars($sec['content'])); ?>
+                            <?php echo empty(trim($sec['content'])) ? 'Sample Text — click ✏️ Edit to change this' : nl2br(htmlspecialchars($sec['content'])); ?>
                         </div>
 
                     <?php elseif ($sec['type'] === 'button'): ?>
@@ -1063,15 +1097,33 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
 
             <!-- Text style fields -->
             <div id="editTextStyles">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-                    <div>
-                        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Text Align</label>
-                        <select name="text_align" id="editTextAlign" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
-                            <option value="left">Left</option>
-                            <option value="center">Center</option>
-                            <option value="right">Right</option>
-                        </select>
-                    </div>
+
+    <div style="margin-bottom:14px;" id="editBgGroup">
+        <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">
+            Section Background
+        </label>
+
+        <input
+            type="color"
+            name="section_bg"
+            id="editSectionBg"
+            value="#6c3afc"
+            style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;padding:3px;"
+        >
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">
+                Text Align
+            </label>
+
+            <select name="text_align" id="editTextAlign" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+            </select>
+        </div>
                     <div>
                         <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Font Size (px)</label>
                         <input type="number" name="font_size" id="editFontSize" placeholder="e.g. 16" min="8" max="120" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
@@ -1840,15 +1892,22 @@ function openEditModal(id, content, type, styleObj) {
         textStyles.style.display     = (type === 'divider' || type === 'hero') ? 'none' : '';
         headerStyles.style.display   = 'none';
         buttonStyles.style.display   = 'none';
-        sub.textContent = 'Update your section content and styles';
+       sub.textContent = 'Update your section content and styles';
         document.getElementById('editSectionContent').value = content;
+        const bgGroup = document.getElementById('editBgGroup');
+        if (type === 'hero') {
+            bgGroup.style.display = '';
+            document.getElementById('editSectionBg').value = styleObj.bg || '#6c3afc';
+        } else {
+            bgGroup.style.display = 'none';
+        }
         if (styleObj) {
             document.getElementById('editTextAlign').value  = styleObj.text_align  || 'left';
             document.getElementById('editFontSize').value   = parseInt(styleObj.font_size) || 16;
             document.getElementById('editColor').value      = styleObj.color        || '#000000';
             document.getElementById('editFontWeight').value = styleObj.font_weight  || 'normal';
             setSelectValue('editFontFamily', styleObj.font_family || 'Arial, sans-serif');
-        }
+        }   
     }
 
     document.getElementById('editModal').classList.add('active');
