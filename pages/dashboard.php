@@ -44,9 +44,9 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | PageCraft</title>
-    <!-- Bootstrap 5 CSS -->
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body { background: #f5f6fa; font-family: 'Segoe UI', sans-serif; }
@@ -94,9 +94,75 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
 
         .site-preview {
             height: 160px; background: #f0f2f8;
+            overflow: hidden; position: relative;
+        }
+
+        .site-preview-inner {
+            position: absolute;
+            top: 0; left: 0;
+            width: 960px;
+            min-height: 768px;
+            transform-origin: top left;
+            pointer-events: none;
+            background: #fff;
+        }
+
+        .site-preview-empty {
+            height: 160px; background: #f0f2f8;
             display: flex; align-items: center; justify-content: center;
             font-size: 48px; position: relative;
         }
+
+        .site-preview-inner .sp-hero {
+            background: linear-gradient(135deg, #6c3afc 0%, #e040fb 50%, #ff6b6b 100%);
+            color: #fff; padding: 80px 40px; text-align: center;
+        }
+        .site-preview-inner .sp-hero h1 { font-size: 52px; font-weight: 900; margin: 0 0 12px; }
+        .site-preview-inner .sp-hero p  { font-size: 22px; opacity: .75; margin: 0; }
+
+        .site-preview-inner .sp-header {
+            background: #1a1a2e; color: #fff;
+            padding: 28px 48px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .site-preview-inner .sp-header .brand {
+            font-size: 26px; font-weight: 900;
+            background: linear-gradient(135deg,#6c3afc,#e040fb);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        .site-preview-inner .sp-text {
+            padding: 60px 80px; font-size: 20px; line-height: 1.8; color: #333;
+        }
+
+        .site-preview-inner .sp-image {
+            padding: 40px; background: #f8f9ff; min-height: 240px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .site-preview-inner .sp-image img {
+            max-width: 100%; border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.12);
+        }
+
+        .site-preview-inner .sp-divider { padding: 10px 48px; }
+        .site-preview-inner .sp-divider hr {
+            border: none; height: 6px;
+            background: linear-gradient(135deg,#6c3afc,#e040fb,#ff6b6b); border-radius: 999px;
+        }
+
+        .site-preview-inner .sp-button {
+            padding: 40px 48px; text-align: center;
+        }
+        .site-preview-inner .sp-btn-el {
+            display: inline-block; padding: 18px 48px;
+            border-radius: 12px; font-size: 20px; font-weight: bold;
+            color: #fff; background: #6c3afc; text-decoration: none;
+        }
+
+        .site-preview-inner .sp-footer {
+            background: #1a1a2e; color: rgba(255,255,255,.6);
+            padding: 40px 48px; text-align: center; font-size: 18px;
+        }
+        .site-preview-inner .sp-footer strong { display: block; font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 8px; }
 
         .badge-live { position: absolute; top: 10px; right: 10px; }
 
@@ -105,7 +171,6 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
 </head>
 <body>
 
-<!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top px-4">
     <a class="navbar-brand" href="#">PageCraft</a>
     <div class="ms-auto d-flex align-items-center gap-3">
@@ -120,7 +185,7 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
 
 <div class="container py-4" style="max-width:1200px;">
 
-    <!-- Header Row -->
+    
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="fw-bold fs-3 mb-0">
@@ -146,7 +211,7 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
         </div>
     </div>
 
-    <!-- Stats Row -->
+    
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="card stat-card c1 p-4">
@@ -171,7 +236,7 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
         </div>
     </div>
 
-    <!-- Sites Grid -->
+    
     <h5 class="fw-bold mb-3">Your Websites</h5>
 
     <?php if (!empty($sitePreviews)): ?>
@@ -182,8 +247,73 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
         ?>
         <div class="col-sm-6 col-lg-4">
             <div class="card site-card h-100">
-                <!-- Preview Thumbnail -->
+                <?php if (!empty($sections)): ?>
                 <div class="site-preview">
+                    <div class="site-preview-inner">
+                        <?php foreach ($sections as $sec):
+                            $style = json_decode($sec['style'] ?? '{}', true) ?: [];
+                        ?>
+                            <?php if ($sec['type'] === 'hero'): ?>
+                                <div class="sp-hero">
+                                    <h1><?php echo htmlspecialchars($sec['content']); ?></h1>
+                                    <p>Welcome to <?php echo htmlspecialchars($site['site_name']); ?></p>
+                                </div>
+
+                            <?php elseif ($sec['type'] === 'header'): ?>
+                                <div class="sp-header" style="background:<?php echo htmlspecialchars($style['bg'] ?? '#1a1a2e'); ?>;">
+                                    <span class="brand"><?php echo htmlspecialchars($sec['content']); ?></span>
+                                    <nav style="display:flex;gap:32px;">
+                                        <span style="color:rgba(255,255,255,.5);font-size:18px;">Home</span>
+                                        <span style="color:rgba(255,255,255,.5);font-size:18px;">About</span>
+                                        <span style="color:rgba(255,255,255,.5);font-size:18px;">Contact</span>
+                                    </nav>
+                                </div>
+
+                            <?php elseif ($sec['type'] === 'text'): ?>
+                                <div class="sp-text"
+                                     style="text-align:<?php echo htmlspecialchars($style['text_align'] ?? 'left'); ?>;
+                                            color:<?php echo htmlspecialchars($style['color'] ?? '#333'); ?>;">
+                                    <?php echo nl2br(htmlspecialchars(mb_substr($sec['content'], 0, 200))); ?>
+                                </div>
+
+                            <?php elseif ($sec['type'] === 'image'): ?>
+                                <div class="sp-image">
+                                    <?php if (!empty($sec['content'])): ?>
+                                        <img src="<?php echo htmlspecialchars($sec['content']); ?>" alt="Image" style="max-height:200px;">
+                                    <?php else: ?>
+                                        <span style="font-size:64px;">🖼️</span>
+                                    <?php endif; ?>
+                                </div>
+
+                            <?php elseif ($sec['type'] === 'divider'): ?>
+                                <div class="sp-divider"><hr></div>
+
+                            <?php elseif ($sec['type'] === 'button'): ?>
+                                <div class="sp-button" style="text-align:<?php echo htmlspecialchars($style['text_align'] ?? 'center'); ?>;">
+                                    <span class="sp-btn-el"
+                                          style="background:<?php echo htmlspecialchars($style['bg'] ?? '#6c3afc'); ?>;
+                                                 color:<?php echo htmlspecialchars($style['color'] ?? '#fff'); ?>;
+                                                 border-radius:<?php echo htmlspecialchars($style['radius'] ?? '12px'); ?>;">
+                                        <?php echo htmlspecialchars($sec['content']); ?>
+                                    </span>
+                                </div>
+
+                            <?php elseif ($sec['type'] === 'footer'): ?>
+                                <div class="sp-footer">
+                                    <strong><?php echo htmlspecialchars($sec['content']); ?></strong>
+                                    Powered by PageCraft
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php if (!empty($site['is_published'])): ?>
+                        <span class="badge bg-success badge-live">✓ Live</span>
+                    <?php else: ?>
+                        <span class="badge bg-secondary badge-live">Draft</span>
+                    <?php endif; ?>
+                </div>
+                <?php else: ?>
+                <div class="site-preview-empty">
                     🌐
                     <?php if (!empty($site['is_published'])): ?>
                         <span class="badge bg-success badge-live">✓ Live</span>
@@ -191,6 +321,7 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
                         <span class="badge bg-secondary badge-live">Draft</span>
                     <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 <div class="card-body">
                     <h6 class="card-title fw-bold"><?php echo htmlspecialchars($site['site_name']); ?></h6>
                     <p class="text-muted small mb-3">
@@ -233,7 +364,6 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
     <?php endif; ?>
 </div>
 
-<!-- Create Modal with Template Picker -->
 <div class="modal fade" id="createModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content border-0 rounded-4 shadow">
@@ -257,7 +387,7 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
 
                     <div class="row g-3 mb-4">
 
-                        <!-- Blank -->
+                        
                         <div class="col-6 col-md-4">
                             <div class="template-card selected" onclick="selectTemplate(this,'blank')">
                                 <div class="template-preview" style="background:#f8f9fa;">
@@ -268,7 +398,7 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
                             </div>
                         </div>
 
-                        <!-- Business -->
+                        
                         <div class="col-6 col-md-4">
                             <div class="template-card" onclick="selectTemplate(this,'business')">
                                 <div class="template-preview" style="background:linear-gradient(135deg,#1a1a2e,#16213e);">
@@ -279,7 +409,7 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
                             </div>
                         </div>
 
-                        <!-- Shop -->
+                        
                         <div class="col-6 col-md-4">
                             <div class="template-card" onclick="selectTemplate(this,'shop')">
                                 <div class="template-preview" style="background:linear-gradient(135deg,#064e3b,#065f46);">
@@ -290,7 +420,7 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
                             </div>
                         </div>
 
-                        <!-- Restaurant -->
+                        
                         <div class="col-6 col-md-4">
                             <div class="template-card" onclick="selectTemplate(this,'restaurant')">
                                 <div class="template-preview" style="background:linear-gradient(135deg,#7f1d1d,#991b1b);">
@@ -301,7 +431,7 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
                             </div>
                         </div>
 
-                        <!-- Music -->
+                        
                         <div class="col-6 col-md-4">
                             <div class="template-card" onclick="selectTemplate(this,'music')">
                                 <div class="template-preview" style="background:linear-gradient(135deg,#18181b,#27272a);">
@@ -312,7 +442,7 @@ $pgCount  = $conn->query("SELECT COUNT(*) as total FROM pages")->fetch_assoc()['
                             </div>
                         </div>
 
-                        <!-- Event -->
+                        
                         <div class="col-6 col-md-4">
                             <div class="template-card" onclick="selectTemplate(this,'event')">
                                 <div class="template-preview" style="background:linear-gradient(135deg,#4a044e,#6b21a8);">
@@ -380,7 +510,18 @@ function selectTemplate(el, value) {
 }
 </script>
 
-<!-- Bootstrap 5 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function scalePreviewInners() {
+    document.querySelectorAll('.site-preview').forEach(function(preview) {
+        var inner = preview.querySelector('.site-preview-inner');
+        if (!inner) return;
+        var scale = Math.max(preview.offsetWidth / 960, preview.offsetHeight / 768);
+        inner.style.transform = 'scale(' + scale + ')';
+    });
+}
+document.addEventListener('DOMContentLoaded', scalePreviewInners);
+window.addEventListener('resize', scalePreviewInners);
+</script>
 </body>
 </html>
