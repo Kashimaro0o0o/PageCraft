@@ -17,4 +17,4 @@ if ($id > 0) {
 
 header("Location: ../pages/dashboard.php");
 exit();
-?>
+?>  

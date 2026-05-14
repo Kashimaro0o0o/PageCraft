@@ -429,7 +429,7 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
         .section-block.resizing { cursor: ns-resize; }
 
         /* ─── IMAGE RESIZER (8-handle, always freely positionable) ─── */
-        ..img-resizer-wrap {
+        .img-resizer-wrap {
             position: absolute;
             display: inline-block;
             line-height: 0;
@@ -572,8 +572,11 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
 
           .section-text-block { padding: 24px 32px; font-size: 15px; line-height: 1.7; color: #374151; min-height: 60px; }
         .section-text-block.is-empty { color: #c4c9d4; font-style: italic; border: 2px dashed #d1d5db; border-radius: 8px; }
-        .section-image-block { padding: 20px 32px; min-height: 200px; }
-        .section-image-block img { max-width: 100%; border-radius: 12px; display: block; }
+        .section-image-block {
+            padding: 20px 32px;
+            min-height: 220px;
+            position: relative;
+        }
         .section-image-block .img-placeholder {
             border: 2px dashed #c4b5fd;
             height: 200px;
@@ -592,6 +595,91 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
             font-weight: 600;
             color: #a78bfa;
             font-style: normal;
+        }
+        /* ─── CANVA-STYLE IMAGE CANVAS ─── */
+        .img-canvas-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #f9fafb;
+            cursor: default;
+            min-height: 200px;
+        }
+        .img-canvas-container.selected {
+            outline: 2px solid #6c3afc;
+            outline-offset: 2px;
+        }
+        .img-canvas-container img.canvas-img {
+            display: block;
+            position: absolute;
+            top: 0; left: 0;
+            user-select: none;
+            pointer-events: none;
+            border-radius: 0;
+        }
+        .img-canvas-container .img-handle {
+            display: none;
+            position: absolute;
+            width: 12px; height: 12px;
+            background: #fff;
+            border: 2px solid #6c3afc;
+            border-radius: 3px;
+            z-index: 30;
+        }
+        .img-canvas-container.selected .img-handle { display: block; }
+        .img-handle.nw { top:-6px;  left:-6px;  cursor:nw-resize; }
+        .img-handle.n  { top:-6px;  left:50%; transform:translateX(-50%); cursor:n-resize; }
+        .img-handle.ne { top:-6px;  right:-6px; cursor:ne-resize; }
+        .img-handle.e  { top:50%;   right:-6px; transform:translateY(-50%); cursor:e-resize; }
+        .img-handle.se { bottom:-6px; right:-6px; cursor:se-resize; }
+        .img-handle.s  { bottom:-6px; left:50%; transform:translateX(-50%); cursor:s-resize; }
+        .img-handle.sw { bottom:-6px; left:-6px; cursor:sw-resize; }
+        .img-handle.w  { top:50%;   left:-6px;  transform:translateY(-50%); cursor:w-resize; }
+        .img-float-toolbar {
+            display: none;
+            position: absolute;
+            top: -48px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 5px 10px;
+            gap: 6px;
+            z-index: 200;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            white-space: nowrap;
+            align-items: center;
+        }
+        .img-canvas-container.selected .img-float-toolbar { display: flex; }
+        .img-toolbar-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 7px;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 9px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .img-toolbar-btn:hover { background: rgba(255,255,255,0.22); }
+        .img-toolbar-btn.active { background: #6c3afc; }
+        .img-toolbar-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.2); flex-shrink:0; }
+        .img-canvas-container.pan-mode { cursor: grab; }
+        .img-canvas-container.pan-mode:active { cursor: grabbing; }
+        .img-scale-slider {
+            -webkit-appearance: none; appearance: none;
+            width: 70px; height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.3);
+            outline: none; cursor: pointer;
+        }
+        .img-scale-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 13px; height: 13px;
+            border-radius: 50%;
+            background: #fff; cursor: pointer;
         }
 
         .section-controls {
@@ -955,30 +1043,36 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
 
                    <?php elseif ($sec['type'] === 'image'): ?>
                         <?php
-                            $imgStyle  = json_decode($sec['style'] ?? '{}', true) ?: [];
-                            $imgW      = !empty($imgStyle['img_width'])  ? (int)$imgStyle['img_width']  : null;
-                            $imgH      = !empty($imgStyle['img_height']) ? (int)$imgStyle['img_height'] : null;
-                            $imgX      = isset($imgStyle['img_x']) ? (int)$imgStyle['img_x'] : 0;
-                            $imgY      = isset($imgStyle['img_y']) ? (int)$imgStyle['img_y'] : 0;
-                            $isCentered = ($imgX === 0 && $imgY === 0 && !$imgW);
-                            if ($isCentered) {
-                                $wrapStyle = 'position:relative;display:block;margin:0 auto;';
-                            } else {
-                                $wrapStyle = "position:absolute;left:{$imgX}px;top:{$imgY}px;";
-                                if ($imgW) $wrapStyle .= "width:{$imgW}px;";
-                            }
-                            $imgInline = 'max-width:100%;display:block;';
-                            if ($imgW) $imgInline .= "width:{$imgW}px;";
-                            if ($imgH) $imgInline .= "height:{$imgH}px;object-fit:cover;";
+                            $imgStyle   = json_decode($sec['style'] ?? '{}', true) ?: [];
+                            $canvasW    = !empty($imgStyle['canvas_w'])   ? (int)$imgStyle['canvas_w']   : 0;
+                            $canvasH    = !empty($imgStyle['canvas_h'])   ? (int)$imgStyle['canvas_h']   : 320;
+                            $imgScale   = !empty($imgStyle['img_scale'])  ? (float)$imgStyle['img_scale'] : 1.0;
+                            $imgOffX    = isset($imgStyle['img_off_x'])   ? (int)$imgStyle['img_off_x']  : 0;
+                            $imgOffY    = isset($imgStyle['img_off_y'])   ? (int)$imgStyle['img_off_y']  : 0;
+                            $fitMode    = $imgStyle['fit_mode'] ?? 'contain';
                         ?>
-                        <div class="section-image-block" style="<?php echo $isCentered ? 'padding:20px 32px;' : 'padding:20px 32px;min-height:'.($imgH ? ($imgH+40) : 200).'px;position:relative;overflow:visible;'; ?>">
+                        <div class="section-image-block">
                             <?php if (!empty($sec['content'])): ?>
-                            <div class="img-resizer-wrap<?php echo $isCentered ? ' centered' : ''; ?>"
+                            <div class="img-canvas-container"
                                  data-sec-id="<?php echo $sec['id']; ?>"
-                                 data-img-x="<?php echo $imgX; ?>"
-                                 data-img-y="<?php echo $imgY; ?>"
-                                 style="<?php echo $wrapStyle; ?>">
-                                <!-- 8 resize handles -->
+                                 data-canvas-w="<?php echo $canvasW; ?>"
+                                 data-canvas-h="<?php echo $canvasH; ?>"
+                                 data-img-scale="<?php echo $imgScale; ?>"
+                                 data-img-off-x="<?php echo $imgOffX; ?>"
+                                 data-img-off-y="<?php echo $imgOffY; ?>"
+                                 data-fit-mode="<?php echo htmlspecialchars($fitMode); ?>"
+                                 style="height:<?php echo $canvasH; ?>px;">
+                                <!-- Floating toolbar -->
+                                <div class="img-float-toolbar">
+                                    <button class="img-toolbar-btn fit-btn" data-mode="contain" title="Fit whole image">⬜ Fit</button>
+                                    <button class="img-toolbar-btn fit-btn" data-mode="fill" title="Fill container">▪️ Fill</button>
+                                    <div class="img-toolbar-sep"></div>
+                                    <span style="color:#9ca3af;font-size:10px;font-weight:700;">SCALE</span>
+                                    <input type="range" class="img-scale-slider" min="0.2" max="3" step="0.05" value="<?php echo $imgScale; ?>">
+                                    <div class="img-toolbar-sep"></div>
+                                    <button class="img-toolbar-btn reset-btn" title="Reset">↺ Reset</button>
+                                </div>
+                                <!-- 8 resize handles on the container -->
                                 <div class="img-handle nw"></div>
                                 <div class="img-handle n"></div>
                                 <div class="img-handle ne"></div>
@@ -987,8 +1081,10 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
                                 <div class="img-handle s"></div>
                                 <div class="img-handle sw"></div>
                                 <div class="img-handle w"></div>
-                                <img src="<?php echo htmlspecialchars($sec['content']); ?>" alt="Image"
-                                     style="<?php echo $imgInline; ?>border-radius:12px;">
+                                <img class="canvas-img"
+                                     src="<?php echo htmlspecialchars($sec['content']); ?>"
+                                     alt="Image"
+                                     draggable="false">
                             </div>
                             <?php else: ?>
                                 <div class="img-placeholder">🖼️<span>Click ✏️ Edit to add an image</span></div>
@@ -1502,111 +1598,174 @@ document.querySelectorAll('.resize-handle').forEach(handle => {
     });
 });
 
-// ─── IMAGE 8-HANDLE RESIZER + FREE DRAG ──────────────────────────────────────
+// ─── CANVA-STYLE IMAGE RESIZER ────────────────────────────────────────────────
 function initImageResizers() {
 
-    function syncContainerHeight(wrap) {
-        const container = wrap.closest('.section-image-block');
-        const needed = wrap.offsetTop + wrap.offsetHeight + 20;
-        container.style.minHeight = Math.max(200, needed) + 'px';
-    }
-
-    document.querySelectorAll('.img-resizer-wrap').forEach(wrap => {
-        const img   = wrap.querySelector('img');
-        const secId = wrap.dataset.secId;
+    document.querySelectorAll('.img-canvas-container').forEach(container => {
+        const img    = container.querySelector('.canvas-img');
+        const secId  = container.dataset.secId;
         if (!img) return;
 
-        // Set initial container height once image loads
-        if (img.complete) syncContainerHeight(wrap);
-        else img.addEventListener('load', () => syncContainerHeight(wrap));
+        // State
+        let scale    = parseFloat(container.dataset.imgScale)  || 1.0;
+        let offX     = parseInt(container.dataset.imgOffX)      || 0;
+        let offY     = parseInt(container.dataset.imgOffY)      || 0;
+        let fitMode  = container.dataset.fitMode || 'contain';
+        let natW     = 0, natH = 0;
 
-        // Click to select (not on a handle)
-        wrap.addEventListener('mousedown', e => {
+        // ── Apply transform to image ─────────────────────────────────────
+        function applyTransform() {
+            if (!natW) return;
+            const cW = container.offsetWidth;
+            const cH = container.offsetHeight;
+            // Scaled image size
+            const iW = natW * scale;
+            const iH = natH * scale;
+            // Clamp offset so image never floats too far
+            const maxX = Math.max(0, iW - cW);
+            const maxY = Math.max(0, iH - cH);
+            offX = Math.max(-maxX, Math.min(0, offX));
+            offY = Math.max(-maxY, Math.min(0, offY));
+
+            img.style.width  = iW + 'px';
+            img.style.height = iH + 'px';
+            img.style.left   = offX + 'px';
+            img.style.top    = offY + 'px';
+        }
+
+        // ── Auto-fit helper ─────────────────────────────────────────────
+        function computeFitScale(mode) {
+            if (!natW || !natH) return 1;
+            const cW = container.offsetWidth;
+            const cH = container.offsetHeight;
+            if (mode === 'fill') {
+                // Cover: image fills container, cropping as needed
+                return Math.max(cW / natW, cH / natH);
+            } else {
+                // Contain: whole image fits, letterboxed
+                return Math.min(cW / natW, cH / natH);
+            }
+        }
+
+        // ── Center image ────────────────────────────────────────────────
+        function centerImage() {
+            if (!natW) return;
+            const cW = container.offsetWidth;
+            const cH = container.offsetHeight;
+            const iW = natW * scale;
+            const iH = natH * scale;
+            offX = Math.round((cW - iW) / 2);
+            offY = Math.round((cH - iH) / 2);
+            // For fill mode clamp to 0 so no gap shows
+            if (fitMode === 'fill') { offX = Math.min(0, offX); offY = Math.min(0, offY); }
+        }
+
+        // ── Toolbar buttons ─────────────────────────────────────────────
+        const scaleSlider = container.querySelector('.img-scale-slider');
+        container.querySelectorAll('.fit-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === fitMode);
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                fitMode = btn.dataset.mode;
+                container.querySelectorAll('.fit-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === fitMode));
+                scale = computeFitScale(fitMode);
+                scaleSlider.value = scale;
+                centerImage();
+                applyTransform();
+                saveState();
+            });
+        });
+
+        // Reset button
+        container.querySelector('.reset-btn')?.addEventListener('click', e => {
+            e.stopPropagation();
+            fitMode = 'contain';
+            container.querySelectorAll('.fit-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'contain'));
+            scale = computeFitScale('contain');
+            scaleSlider.value = scale;
+            centerImage();
+            applyTransform();
+            saveState();
+        });
+
+        // Scale slider
+        scaleSlider.addEventListener('input', e => {
+            e.stopPropagation();
+            scale = parseFloat(scaleSlider.value);
+            applyTransform();
+        });
+        scaleSlider.addEventListener('change', () => saveState());
+
+        // ── When image loads — compute natural size, then apply ─────────
+        function onImgLoad() {
+            natW = img.naturalWidth  || img.offsetWidth  || 400;
+            natH = img.naturalHeight || img.offsetHeight || 300;
+
+            const cW = container.offsetWidth || 600;
+            const cH = container.offsetHeight || 320;
+
+            // First load: auto-fit
+            if (!container.dataset.imgScale || container.dataset.imgScale === '1') {
+                fitMode = 'contain';
+                scale   = computeFitScale('contain');
+                scaleSlider.value = scale;
+                centerImage();
+                container.querySelectorAll('.fit-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'contain'));
+            }
+
+            applyTransform();
+            saveState();
+        }
+
+        if (img.complete && img.naturalWidth) onImgLoad();
+        else img.addEventListener('load', onImgLoad);
+
+        // ── Click to select ─────────────────────────────────────────────
+        container.addEventListener('mousedown', e => {
             if (e.target.classList.contains('img-handle')) return;
+            if (e.target.closest('.img-float-toolbar')) return;
             e.stopPropagation();
-            document.querySelectorAll('.img-resizer-wrap.selected').forEach(w => w.classList.remove('selected'));
-            wrap.classList.add('selected');
+            selectContainer(container);
+
+            // ── Pan (move image inside container) ──────────────────────
+            if (!e.target.classList.contains('img-handle')) {
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startOffX = offX;
+                const startOffY = offY;
+
+                container.classList.add('pan-mode');
+                document.body.style.userSelect = 'none';
+
+                const onMove = ev => {
+                    offX = startOffX + ev.clientX - startX;
+                    offY = startOffY + ev.clientY - startY;
+                    applyTransform();
+                };
+                const onUp = () => {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    container.classList.remove('pan-mode');
+                    document.body.style.userSelect = '';
+                    saveState();
+                };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            }
         });
 
-        // Prevent the parent section-block's draggable from stealing events inside the image block
-        wrap.closest('.section-image-block').addEventListener('mousedown', e => {
-            e.stopPropagation();
-        });
-
-        // ── Drag to reposition (Canva-style) ──────────────────────────────
-        img.addEventListener('mousedown', e => {
-            if (e.target.classList.contains('img-handle')) return;
-            e.preventDefault();
-            e.stopPropagation();
-
-            // Select on drag start too
-            document.querySelectorAll('.img-resizer-wrap.selected').forEach(w => w.classList.remove('selected'));
-            wrap.classList.add('selected');
-
-            const container = wrap.closest('.section-image-block');
-            const startX    = e.clientX;
-            const startY    = e.clientY;
-            const origLeft  = wrap.offsetLeft;
-            const origTop   = wrap.offsetTop;
-
-            document.body.style.userSelect = 'none';
-            wrap.style.cursor = 'grabbing';
-
-            const onMove = ev => {
-                const newLeft = Math.max(0, origLeft + ev.clientX - startX);
-                const newTop  = Math.max(0, origTop  + ev.clientY - startY);
-                wrap.style.left = newLeft + 'px';
-                wrap.style.top  = newTop  + 'px';
-                // Auto-expand container if image is dragged lower
-                const needed = newTop + wrap.offsetHeight + 20;
-                if (needed > container.offsetHeight) {
-                    container.style.minHeight = needed + 'px';
-                }
-            };
-
-            const onUp = () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-                document.body.style.userSelect = '';
-                wrap.style.cursor = '';
-
-                const newX = wrap.offsetLeft;
-                const newY = wrap.offsetTop;
-                wrap.dataset.imgX = newX;
-                wrap.dataset.imgY = newY;
-                syncContainerHeight(wrap);
-
-                fetch('../actions/save_height.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id:     secId,
-                        height: Math.round(img.offsetHeight),
-                        width:  Math.round(img.offsetWidth),
-                        x:      newX,
-                        y:      newY,
-                        type:   'image'
-                    })
-                });
-            };
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-        });
-
-        // ── 8-handle resize ───────────────────────────────────────────────
-        wrap.querySelectorAll('.img-handle').forEach(handle => {
+        // ── 8-handle resize (container size) ───────────────────────────
+        container.querySelectorAll('.img-handle').forEach(handle => {
             handle.addEventListener('mousedown', e => {
                 e.preventDefault();
                 e.stopPropagation();
-                // Keep selected during resize
-                wrap.classList.add('selected');
+                container.classList.add('selected');
 
                 const dir    = [...handle.classList].find(c => ['nw','n','ne','e','se','s','sw','w'].includes(c));
                 const startX = e.clientX;
                 const startY = e.clientY;
-                const startW = img.offsetWidth;
-                const startH = img.offsetHeight;
+                const startW = container.offsetWidth;
+                const startH = container.offsetHeight;
 
                 document.body.style.userSelect = 'none';
 
@@ -1615,54 +1774,67 @@ function initImageResizers() {
                     let dy = ev.clientY - startY;
                     let newW = startW, newH = startH;
 
-                    if (dir === 'e' || dir === 'ne' || dir === 'se') newW = Math.max(40, startW + dx);
-                    if (dir === 'w' || dir === 'nw' || dir === 'sw') newW = Math.max(40, startW - dx);
-                    if (dir === 's' || dir === 'se' || dir === 'sw') newH = Math.max(30, startH + dy);
-                    if (dir === 'n' || dir === 'ne' || dir === 'nw') newH = Math.max(30, startH - dy);
+                    if (['e','ne','se'].includes(dir))  newW = Math.max(80, startW + dx);
+                    if (['w','nw','sw'].includes(dir))  newW = Math.max(80, startW - dx);
+                    if (['s','se','sw'].includes(dir))  newH = Math.max(60, startH + dy);
+                    if (['n','ne','nw'].includes(dir))  newH = Math.max(60, startH - dy);
 
+                    // Corners: maintain aspect ratio
                     if (['nw','ne','se','sw'].includes(dir)) {
-                        const scale = Math.max(newW / startW, newH / startH);
-                        newW = Math.round(startW * scale);
-                        newH = Math.round(startH * scale);
+                        const asp = startW / startH;
+                        newH = Math.round(newW / asp);
                     }
 
-                    img.style.width  = newW + 'px';
-                    img.style.height = newH + 'px';
-                    wrap.style.width = newW + 'px';
+                    container.style.width  = newW + 'px';
+                    container.style.height = newH + 'px';
+                    applyTransform();
                 };
 
                 const onUp = () => {
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup', onUp);
                     document.body.style.userSelect = '';
-                    syncContainerHeight(wrap);
-
-                    fetch('../actions/save_height.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            id:     secId,
-                            height: Math.round(img.offsetHeight),
-                            width:  Math.round(img.offsetWidth),
-                            x:      wrap.offsetLeft,
-                            y:      wrap.offsetTop,
-                            type:   'image'
-                        })
-                    });
+                    saveState();
                 };
 
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
             });
         });
+
+        // ── Save state to DB ────────────────────────────────────────────
+        function saveState() {
+            fetch('../actions/save_height.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id:        secId,
+                    type:      'image',
+                    canvas_w:  Math.round(container.offsetWidth),
+                    canvas_h:  Math.round(container.offsetHeight),
+                    img_scale: Math.round(scale * 1000) / 1000,
+                    img_off_x: Math.round(offX),
+                    img_off_y: Math.round(offY),
+                    fit_mode:  fitMode,
+                    // Legacy compat
+                    height:    Math.round(container.offsetHeight),
+                    width:     Math.round(container.offsetWidth),
+                })
+            });
+        }
     });
 
     // Click outside deselects
     document.addEventListener('mousedown', e => {
-        if (!e.target.closest('.img-resizer-wrap')) {
-            document.querySelectorAll('.img-resizer-wrap.selected').forEach(w => w.classList.remove('selected'));
+        if (!e.target.closest('.img-canvas-container') && !e.target.closest('.img-float-toolbar')) {
+            document.querySelectorAll('.img-canvas-container.selected').forEach(c => c.classList.remove('selected'));
         }
     });
+}
+
+function selectContainer(container) {
+    document.querySelectorAll('.img-canvas-container.selected').forEach(c => c.classList.remove('selected'));
+    container.classList.add('selected');
 }
 
 initImageResizers();
