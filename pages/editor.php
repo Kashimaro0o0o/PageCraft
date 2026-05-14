@@ -713,11 +713,73 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
             cursor: pointer;
         }
 
-        .ctrl-up   { background: #eef2ff; color: #4f46e5; }
-        .ctrl-down { background: #eef2ff; color: #4f46e5; }
-        .ctrl-edit { background: #dcfce7; color: #15803d; }
-        .ctrl-delete { background: #fee2e2; color: #b91c1c; }
+        .ctrl-up        { background: #eef2ff; color: #4f46e5; }
+        .ctrl-down      { background: #eef2ff; color: #4f46e5; }
+        .ctrl-edit      { background: #dcfce7; color: #15803d; }
+        .ctrl-duplicate { background: #fef9c3; color: #a16207; }
+        .ctrl-delete    { background: #fee2e2; color: #b91c1c; }
         .ctrl-btn:hover { transform: scale(1.12); }
+
+        /* ─── CHAR COUNTER ─── */
+        .char-counter {
+            font-size: 10px;
+            color: #9ca3af;
+            text-align: right;
+            margin-top: 3px;
+            font-weight: 600;
+        }
+        .char-counter.warn  { color: #f59e0b; }
+        .char-counter.limit { color: #ef4444; }
+
+        /* ─── BG IMAGE UPLOAD ─── */
+        .bg-img-preview {
+            width: 100%;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-top: 6px;
+            display: none;
+        }
+
+        /* ─── EMOJI PICKER INLINE ─── */
+        .emoji-grid {
+            display: none;
+            flex-wrap: wrap;
+            gap: 4px;
+            background: #f8f9ff;
+            border: 1px solid #e0e7ff;
+            border-radius: 10px;
+            padding: 8px;
+            margin-top: 6px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        .emoji-grid.open { display: flex; }
+        .emoji-btn {
+            font-size: 20px;
+            cursor: pointer;
+            padding: 3px 5px;
+            border-radius: 6px;
+            border: none;
+            background: none;
+            transition: background 0.15s;
+            line-height: 1;
+        }
+        .emoji-btn:hover { background: #e0e7ff; }
+        .emoji-toggle {
+            width: 100%;
+            padding: 8px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #374151;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s;
+        }
+        .emoji-toggle:hover { background: #e0e7ff; color: #6c3afc; }
 
         /* ─── MODALS ─── */
         .modal-overlay {
@@ -878,7 +940,10 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
 
                 <div class="form-group" id="contentGroup">
                     <label id="contentLabel">Text Content</label>
-                    <textarea name="content" id="contentInput" placeholder="Enter your text content here..."></textarea>
+                    <textarea name="content" id="contentInput" placeholder="Enter your text content here..." oninput="updateCharCount(this, 'addCharCount', 500)"></textarea>
+                    <div class="char-counter" id="addCharCount">0 / 500</div>
+                    <button type="button" class="emoji-toggle" id="emojiToggleAdd" onclick="toggleEmoji('emojiGridAdd','contentInput')" style="margin-top:6px;">😊 Add Emoji / Icon</button>
+                    <div class="emoji-grid" id="emojiGridAdd"></div>
                 </div>
 
                 <div class="form-group" id="uploadGroup" style="display:none;">
@@ -900,6 +965,42 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
                     <div class="form-group">
                         <label>Text Color</label>
                         <input type="color" name="header_color" id="headerColorInput" value="#ffffff" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;padding:4px;">
+                    </div>
+                </div>
+
+                <!-- Hero BG Image -->
+                <div id="heroBgImageGroup" style="display:none;">
+                    <div class="form-group">
+                        <label>Hero Background Image (optional)</label>
+                        <div class="upload-drop-zone" onclick="document.getElementById('heroBgFile').click()" style="padding:12px;">
+                            <div class="upload-icon" style="font-size:20px;">🖼️</div>
+                            <div class="upload-text">Upload background photo</div>
+                            <div class="upload-hint">Replaces background color if set</div>
+                        </div>
+                        <input type="file" name="hero_bg_file" id="heroBgFile" accept="image/*" style="display:none;" onchange="previewHeroBg(this)">
+                        <img id="heroBgPreview" class="bg-img-preview" src="" alt="">
+                    </div>
+                    <div class="form-group">
+                        <label>Text Color</label>
+                        <input type="color" name="hero_text_color" id="heroTextColor" value="#ffffff" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;padding:4px;">
+                    </div>
+                </div>
+
+                <!-- Hero BG Image -->
+                <div id="heroBgImageGroup" style="display:none;">
+                    <div class="form-group">
+                        <label>Hero Background Image (optional)</label>
+                        <div class="upload-drop-zone" onclick="document.getElementById('heroBgFile').click()" style="padding:12px;">
+                            <div class="upload-icon" style="font-size:20px;">🖼️</div>
+                            <div class="upload-text">Upload background photo</div>
+                            <div class="upload-hint">Replaces background color if set</div>
+                        </div>
+                        <input type="file" name="hero_bg_file" id="heroBgFile" accept="image/*" style="display:none;" onchange="previewHeroBg(this)">
+                        <img id="heroBgPreview" class="bg-img-preview" src="" alt="">
+                    </div>
+                    <div class="form-group">
+                        <label>Text Color</label>
+                        <input type="color" name="hero_text_color" id="heroTextColor" value="#ffffff" style="width:100%;height:42px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;padding:4px;">
                     </div>
                 </div>
 
@@ -1008,10 +1109,16 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
                    <?php if ($sec['type'] === 'hero'): ?>
                         <?php $style = json_decode($sec['style'] ?? '{}', true); ?>
                         <div class="section-hero"
-                             style="<?php if (!empty($style['bg'])) echo 'background:'.$style['bg'].';'; ?>
-                                    <?php if (!empty($style['color'])) echo 'color:'.$style['color'].';'; ?>
-                                    <?php if (!empty($style['text_align'])) echo 'text-align:'.$style['text_align'].';'; ?>
-                                    min-height:<?php echo !empty($sec['height']) ? $sec['height'].'px' : ''; ?>">
+                             style="<?php
+                                if (!empty($style['bg_image'])) {
+                                    echo 'background:url('.htmlspecialchars($style['bg_image']).') center/cover no-repeat;';
+                                } elseif (!empty($style['bg'])) {
+                                    echo 'background:'.$style['bg'].';';
+                                }
+                                if (!empty($style['color'])) echo 'color:'.$style['color'].';';
+                                if (!empty($style['text_align'])) echo 'text-align:'.$style['text_align'].';';
+                                echo 'min-height:'.(!empty($sec['height']) ? $sec['height'].'px' : '');
+                             ?>">
                             <h2 style="<?php if (!empty($style['font_size'])) echo 'font-size:'.$style['font_size'].';'; ?>
                                        <?php if (!empty($style['font_weight'])) echo 'font-weight:'.$style['font_weight'].';'; ?>
                                        <?php if (!empty($style['font_family'])) echo 'font-family:'.$style['font_family'].';'; ?>">
@@ -1138,6 +1245,8 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
                         <button onclick="moveSection(<?php echo $sec['id']; ?>, 'up', this)" class="ctrl-btn ctrl-up" title="Move Up">⬆️</button>
                         <button onclick="moveSection(<?php echo $sec['id']; ?>, 'down', this)" class="ctrl-btn ctrl-down" title="Move Down">⬇️</button>
                         <button onclick="openEditModal(<?php echo $sec['id']; ?>, '<?php echo addslashes(htmlspecialchars($sec['content'])); ?>', '<?php echo $sec['type']; ?>', <?php echo htmlspecialchars($sec['style'] ?? '{}'); ?>)" class="ctrl-btn ctrl-edit" title="Edit">✏️</button>
+                        <a href="../actions/duplicate_section.php?id=<?php echo $sec['id']; ?>&site_id=<?php echo $site_id; ?>"
+                           class="ctrl-btn ctrl-duplicate" title="Duplicate Section">⧉</a>
                         <a href="../actions/archive.php?id=<?php echo $sec['id']; ?>&site_id=<?php echo $site_id; ?>"
                            class="ctrl-btn ctrl-delete"
                            onclick="return confirm('Remove this section?');" title="Delete">🗑️</a>
@@ -1169,7 +1278,10 @@ $siteUrl = $protocol . '://' . $host . $base . '/pages/view.php?site_id=' . $sit
             <!-- Text/Hero/Footer/Divider content -->
             <div id="editContentGroup" style="margin-bottom:14px;">
                 <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;" id="editContentLabel">Content</label>
-                <textarea name="content" id="editSectionContent" style="width:100%;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;min-height:90px;resize:vertical;outline:none;font-family:inherit;"></textarea>
+                <textarea name="content" id="editSectionContent" style="width:100%;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;min-height:90px;resize:vertical;outline:none;font-family:inherit;" oninput="updateCharCount(this,'editCharCount',500)"></textarea>
+                <div class="char-counter" id="editCharCount">0 / 500</div>
+                <button type="button" class="emoji-toggle" onclick="toggleEmoji('emojiGridEdit','editSectionContent')" style="margin-top:6px;">😊 Add Emoji / Icon</button>
+                <div class="emoji-grid" id="emojiGridEdit"></div>
             </div>
 
             <!-- Image edit fields -->
@@ -2138,6 +2250,97 @@ function copyUrl() {
 <?php if (isset($_GET['published'])): ?>
 document.getElementById('publishModal').classList.add('active');
 <?php endif; ?>
+
+// ─── FEATURE 1: DUPLICATE SECTION ─────────────────────────────────────────
+// (handled server-side via duplicate_section.php — button already added above)
+
+// ─── FEATURE 2: CHARACTER COUNTER ─────────────────────────────────────────
+function updateCharCount(textarea, counterId, max) {
+    const counter = document.getElementById(counterId);
+    if (!counter) return;
+    const len = textarea.value.length;
+    counter.textContent = len + ' / ' + max;
+    counter.classList.remove('warn', 'limit');
+    if (len >= max) counter.classList.add('limit');
+    else if (len >= max * 0.8) counter.classList.add('warn');
+}
+
+// Init counter for edit modal when opened
+const _origOpenEditModal = openEditModal;
+openEditModal = function(id, content, type, styleObj) {
+    _origOpenEditModal(id, content, type, styleObj);
+    const ta = document.getElementById('editSectionContent');
+    if (ta) updateCharCount(ta, 'editCharCount', 500);
+};
+
+// ─── FEATURE 3: EMOJI PICKER ───────────────────────────────────────────────
+const EMOJIS = [
+    '😊','😎','🔥','✨','💡','🎉','🚀','⭐','💪','🎯',
+    '📌','📍','✅','❌','⚠️','💬','📞','📧','🌐','🔗',
+    '🏠','🏪','🍕','🍔','☕','🍷','🎵','🎸','📸','🎨',
+    '🌟','💫','❤️','💙','💚','🧡','💛','💜','🖤','🤍',
+    '👋','👍','👏','🙏','✌️','🤝','💼','📋','📊','📈',
+    '🌅','🌆','🌍','🌿','🌸','🌺','🦋','🐾','⚡','🎁',
+    '🔑','🔒','🛡️','💎','🏆','🥇','🎖️','📣','📢','💥',
+    '①','②','③','④','⑤','→','←','↑','↓','◆','●','■','▲',
+];
+
+function buildEmojiGrid(gridId) {
+    const grid = document.getElementById(gridId);
+    if (!grid || grid.dataset.built) return;
+    EMOJIS.forEach(em => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'emoji-btn';
+        btn.textContent = em;
+        btn.title = em;
+        grid.appendChild(btn);
+    });
+    grid.dataset.built = '1';
+}
+
+function toggleEmoji(gridId, targetId) {
+    buildEmojiGrid(gridId);
+    const grid = document.getElementById(gridId);
+    const target = document.getElementById(targetId);
+    grid.classList.toggle('open');
+
+    // Attach click only once
+    if (!grid.dataset.listening) {
+        grid.addEventListener('click', e => {
+            if (!e.target.classList.contains('emoji-btn')) return;
+            const emoji = e.target.textContent;
+            const pos = target.selectionStart ?? target.value.length;
+            target.value = target.value.slice(0, pos) + emoji + target.value.slice(pos);
+            target.focus();
+            target.selectionStart = target.selectionEnd = pos + emoji.length;
+            // Update char counter
+            target.dispatchEvent(new Event('input'));
+        });
+        grid.dataset.listening = '1';
+    }
+}
+
+// ─── FEATURE 4: HERO BACKGROUND IMAGE PREVIEW ─────────────────────────────
+function previewHeroBg(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const preview = document.getElementById('heroBgPreview');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+// ─── SHOW/HIDE heroBgImageGroup when hero type selected ───────────────────
+const _origSelectType = selectType;
+selectType = function(type, btn) {
+    _origSelectType(type, btn);
+    const heroBg = document.getElementById('heroBgImageGroup');
+    if (heroBg) heroBg.style.display = (type === 'hero') ? '' : 'none';
+};
 </script>
 </body>
 </html>
